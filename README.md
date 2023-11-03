@@ -1,5 +1,6 @@
 # CS174A-Sharpshooter
 
+## Beginning
 To clone the project on your machine, run in the folder of your choice:
 
 ```
@@ -21,6 +22,7 @@ git branch -v
 ```
 You should see a * next to the name of your new branch. 
 
+## Committing/Pushing your branch 
 Once you've made changes, there are a few steps before pushing your branch.
 
 To check which files are currently staged to be committed, run:
@@ -41,3 +43,5 @@ Then you can push your commit to main with:
 //replace mybranch with the name of your branch
 git push origin mybranch  
 ```
+
+Once you do this, you should be able to see your new branch commit on the github. 
