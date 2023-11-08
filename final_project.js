@@ -34,10 +34,10 @@ function clamp(value,min_val, max_val){
 
 function CheckCollisionCubeSphere(cube, sphere){
     //AABB Collision for a cube and a sphere
-    //TODO: Check if theres a better way to do vector operations in tinygraphics, I couldn't remember the vector syntax
+
     
     //Get a line from center of cube to center of sphere
-    let difference = vec3(sphere.position[0] - cube.position[0],sphere.position[1] - cube.position[1],sphere.position[2] - cube.position[2]); //this should automatically be a 3 veec
+    let difference = sphere.position.minus(cube.position) ; 
     let cube_vals = vec3(cube.width,cube.height,cube.depth);
     
     //Clamp the line so it cannot pass the edge of the cube
@@ -47,21 +47,50 @@ function CheckCollisionCubeSphere(cube, sphere){
         clamp(difference[2], -cube_vals[2], cube_vals[2]),
     );
     //Find the closest point on the cube (to the sphere) by adding the clamped vector to the center of the cube
-    let closest = vec3(
-        cube.position[0] + clamped[0],
-        cube.position[1] + clamped[1],
-        cube.position[2] + clamped[2],
-        );
+    let closest = cube.position.plus(clamped);
     //Create a vector from that closest point to the center of the sphere
-    difference = vec3(
-        closest[0] - sphere.position[0],
-        closest[1] - sphere.position[1],
-        closest[2] - sphere.position[2])
-        ;
+    difference = closest.minus(sphere.position);
     
     let length = Math.sqrt((difference[0]**2)+(difference[1]**2)+(difference[2]**2)); //TODO: double check how to get length of a vec just using tinygraphics
     //If the distance from the closest point to the center is less than the sphere's radius, it must be inside the sphere
     return Boolean(length < sphere.radius);
+}
+function CheckCollisionRaySphere(program_state, ray, ray_origin, sphere){
+    
+
+    let L = ray_origin.minus(sphere.position);
+    //console.log(L);
+    let b = ray.dot(L);
+    //console.log(b);
+    let c = L.dot(L) - sphere.radius2;
+    //console.log(c);
+    let t = b*b -c;
+    //console.log(t);
+    if (t<0)
+        return false;
+
+    return true;
+
+}
+
+function CheckCollisionRayPlane(program_state, ray, ray_origin){
+//For now, this just checks if the ray collides with the xy, z=0 plane
+    let n = vec3(0,0,1); //the normal to the plane
+    
+    let d =0;
+    
+    let denom = ray.dot(n); 
+    //console.log(denom);
+    if (Math.abs(denom) <= 0.0001) //checking if denom will be close to 0
+        return null;
+    //todo: check if + and * work correctly 
+    let t = -( ray_origin.dot(n) + d) / (denom);
+    //console.log(t);
+    if (t<0)
+        return null;
+    //console.log(ray_origin);
+    //console.log(ray.scale_by(t));
+    return ray_origin.plus(ray.times(t));
 }
 
 export class FinalProject extends Scene {
@@ -84,6 +113,7 @@ export class FinalProject extends Scene {
                 {ambient: .5, diffusivity: .6, color: hex_color("#ffffff")}),
            
         }
+
         this.objects={
             ball:
             {
@@ -109,19 +139,67 @@ export class FinalProject extends Scene {
                 height: 10, //y
                 width:1, //half of real width
                 depth:4 //half of real depth 
+            },
+            ball_drag:{
+                position:vec3(0,0,0),
+                height:1,
+                depth:1,
+                width:1,
+                radius:1,
+                radius2: 1**2,
             }
         }
-
-        this.initial_camera_location = Mat4.look_at(vec3(0, 20, 40), vec3(0, 0, 0), vec3(0, 1, 0));
+        this.mouse_enabled_canvases = new Set();
+        //this.will_take_over_graphics_state = true;
+        this.initial_camera_location = Mat4.look_at(vec3(0, 0, 40), vec3(0, 0, 0), vec3(0, 1, 0));
+        this.projection_transform_inverse = undefined;
+        this.obj_picked = false;
+        this.obj_picked_pos = null;
+        this.mouse_hold = false;
+        //this.mouse_old_pos=null;
     }
-    
+    add_mouse_controls(canvas) {
+        // add_mouse_controls():  Attach HTML mouse events to the drawing canvas.
+        //note that y vals on from_center are inverted
+        this.mouse = {"from_center": vec(0, 0)};
+        const mouse_position = (e, rect = canvas.getBoundingClientRect()) =>
+            vec(e.clientX - (rect.left + rect.right) / 2, e.clientY - (rect.bottom + rect.top) / 2);
+        // Set up mouse response.  The last one stops us from reacting if the mouse leaves the canvas:
+        document.addEventListener("mouseup", e => {
+           // console.log(this.mouse.from_center);
+           this.mouse_hold = false;
+           this.obj_picked = false;
+            this.mouse.anchor = undefined;
+            if (this.obj_picked_pos)
+                this.objects.ball_drag.position = this.obj_picked_pos;
+        });
+        canvas.addEventListener("mousedown", e => {
+            e.preventDefault();
+            //console.log(this.mouse.from_center);
+
+            this.mouse.anchor = mouse_position(e);
+        });
+        canvas.addEventListener("mousemove", e => {
+            e.preventDefault();
+            //console.log(this.mouse.from_center);
+            if  (this.mouse.anchor)
+                this.mouse_hold = true; //activates when mouse is down and moving
+            
+            this.mouse.from_center = mouse_position(e);
+            
+        });
+        canvas.addEventListener("mouseout", e => {
+            //console.log(this.mouse.from_center);
+
+            if (!this.mouse.anchor) this.mouse.from_center.scale_by(0)
+        });
+    }
 
     make_control_panel() {
         // Draw the scene's buttons, setup their actions and keyboard shortcuts, and monitor live measurements.
         
-        //The ctrl 0 button is just an example taken from Assignment 3
-        this.key_triggered_button("View solar system", ["Control", "0"], () => this.attached = () => null);
-        this.new_line();
+        
+        
         
 
     }
@@ -148,7 +226,7 @@ export class FinalProject extends Scene {
         if ( collisionWall|| collisionFloor){
             //If there was a collision, just set ball to previous position - in our project, balloon would probably disappear and dart might too 
             console.log(this.objects.ball.position)
-            console.log("Collision!"); //for debugging
+            //console.log("Collision!"); //for debugging
             model_transform = model_transform.times(Mat4.translation(old_pos[0],old_pos[1],old_pos[2]));
             this.objects.ball.position = old_pos;
             this.objects.ball.og_position = old_pos;
@@ -180,6 +258,7 @@ export class FinalProject extends Scene {
         ;
             this.shapes.cube.draw(context, program_state, model_transform, this.materials.test);
     }
+    
 
 /*Display*/
 /*This displays a simple scene of a 'wall' and a 'floor' with a ball. 
@@ -197,14 +276,23 @@ This also means there's typically a little bit of space between the wall and the
         // display():  Called once per frame of animation.
         // Setup -- This part sets up the scene's overall camera matrix, projection matrix, and lights:
         if (!context.scratchpad.controls) {
-            this.children.push(context.scratchpad.controls = new defs.Movement_Controls());
+           // this.children.push(context.scratchpad.controls = new defs.Movement_Controls());
             // Define the global camera and projection matrices, which are stored in program_state.
             program_state.set_camera(this.initial_camera_location);
+        }
+        
+
+        if (!this.mouse_enabled_canvases.has(context.canvas)) {
+            this.add_mouse_controls(context.canvas);
+            this.mouse_enabled_canvases.add(context.canvas);
         }
 
         program_state.projection_transform = Mat4.perspective(
             Math.PI / 4, context.width / context.height, .1, 1000);
 
+        if (this.projection_transform_inverse == undefined){
+            this.projection_transform_inverse = Mat4.inverse(program_state.projection_transform);
+        }
 
         /*Lighting*/
         const light_position = vec4(0, 5, 5, 1);
@@ -219,6 +307,74 @@ This also means there's typically a little bit of space between the wall and the
         this.draw_floor(context,program_state, model_transform);
         this.draw_wall(context,program_state,model_transform);
         this.draw_ball(context,program_state, model_transform, t);
+
+        /*Moving the ball when picked*/
+        //if the mouse is moving while pressed down and some object has been picked
+        if (this.mouse_hold && this.obj_picked){    
+            //Similar to checking for collision, casts a ray from mouse location and converts to world coords
+            let x = (2.0*this.mouse.from_center[0])/1080 ;
+            let y = (2.0*this.mouse.from_center[1]) /600 ;
+            let z = -1.0; 
+            let ray_proj = vec4(x,-y,z,1.0);
+           
+            let ray_ES = this.projection_transform_inverse.times(ray_proj);
+            
+            ray_ES = vec4(ray_ES[0],ray_ES[1],-1.0,0);
+            let ray_world = (program_state.camera_inverse.times(ray_ES)).to3();
+
+            ray_world.normalize(); 
+            let ray_origin = vec3(0,0,40);
+            //Checks where the ray from the mouse will intersect the xy plane - that is the point the object should move to 
+            let new_pos = CheckCollisionRayPlane(program_state, ray_world, ray_origin);
+            console.log(new_pos);
+            
+            //Transform the model matrix to move the object to the new point 
+            if (new_pos){ //checking its not null
+                this.obj_picked_pos = new_pos;
+                this.objects.ball_drag.position = new_pos;
+            }
+            
+        }
+        /*When mouse pressed down, check if on top of ball*/
+        else if (this.mouse.anchor){
+            //mouse coords are in viewport space, so convert them
+            //default canvas/viewport is 1080w by 600h - divide by 2
+            this.mouse_old_pos = this.mouse.anchor;
+            let x = (2.0*this.mouse.from_center[0])/1080;
+            let y = (2.0*this.mouse.from_center[1]) /600;
+            let z = -1.0; //don't need to reverse perspective division, just set -1
+            let ray_norm_parallel_proj = vec4(x,-y,z,1.0);
+            
+
+            //Transform ray from projection space to eye space by multiplying by inverse of projection matrix
+            let ray_ES = this.projection_transform_inverse.times(ray_norm_parallel_proj);
+            
+
+            //undo transformation in z dir and set to a vector 
+            ray_ES = vec4(ray_ES[0],ray_ES[1],-1.0,0);
+            
+
+            //Convert ray from eye space to world space by multiplying by inverse of camera matrix
+            //Also send it to a 3-coord vector, don't need the homog part anymore
+            let ray_world = (program_state.camera_inverse.times(ray_ES)).to3();
+            
+            
+            ray_world.normalize(); 
+            
+           //origin of ray is position of camera
+           let ray_origin = vec3(0,0,40);//check if there's a better way to get this dynamically
+           
+           if(CheckCollisionRaySphere(program_state, ray_world,ray_origin, this.objects.ball_drag)){
+                this.obj_picked =true;
+                
+           }
+           
+        }
+        //Move the ball to correct position 
+        model_transform = model_transform.times(Mat4.translation(this.objects.ball_drag.position[0],this.objects.ball_drag.position[1],this.objects.ball_drag.position[2]));
+        
+        this.shapes.sphere.draw(context,program_state,model_transform,this.materials.test);
+
 
        
     }
