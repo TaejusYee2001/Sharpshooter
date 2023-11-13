@@ -4,7 +4,7 @@
 To clone the project on your machine, run in the folder of your choice:
 
 ```
-git clone https://github.com/brennakj3/CS174A-Sharpshooter.git
+git clone https://github.com/CS174A-Group/Sharpshooter.git
 ```
 
 Then make sure to cd into the CS174A-Sharpshooter folder.
