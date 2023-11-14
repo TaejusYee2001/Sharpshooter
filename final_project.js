@@ -13,7 +13,8 @@ export class FinalProject extends Scene {
         this.shapes = {
             sphere: new defs.Subdivision_Sphere(4),
             circle: new defs.Regular_2D_Polygon(1, 15),
-           
+
+            cube: new defs.Cube()
         };
 
         // *** Materials
@@ -21,6 +22,8 @@ export class FinalProject extends Scene {
             //Example material
             test: new Material(new defs.Phong_Shader(),
                 {ambient: .4, diffusivity: .6, color: hex_color("#ffffff")}),
+            red_flat: new Material(new defs.Phong_Shader(),
+                {ambient: .4, diffusivity: .6, color: hex_color("#990000")}),
            
         }
 
@@ -57,9 +60,25 @@ export class FinalProject extends Scene {
         
         const t = program_state.animation_time / 1000, dt = program_state.animation_delta_time / 1000;
         
-        let model_transform = Mat4.identity();
+        
 
-       
+        // Draw large rectangular background
+        let model_transform = Mat4.identity()
+            .times(Mat4.translation(0, 0, -5))
+            .times(Mat4.scale(5, 3, .5));
+        this.shapes.cube.draw(context, program_state, model_transform, this.materials.red_flat);
+
+        // Draw top of box
+        model_transform = Mat4.identity()
+            .times(Mat4.translation(0, 2.75, -3.5))
+            .times(Mat4.scale(5, .5, 1));
+        this.shapes.cube.draw(context, program_state, model_transform, this.materials.red_flat);
+
+        // Draw bottom of box
+        model_transform = Mat4.identity()
+            .times(Mat4.translation(0, -2.75, -3.5))
+            .times(Mat4.scale(5, .5, 1));
+        this.shapes.cube.draw(context, program_state, model_transform, this.materials.red_flat);
     }
 }
 
