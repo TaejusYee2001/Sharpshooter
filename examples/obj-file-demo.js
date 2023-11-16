@@ -154,25 +154,49 @@ export class Obj_File_Demo extends Scene {                           // **Obj_Fi
         //for (let i of [-1, 1]) {                                       // Spin the 3D model shapes as well.
         const model_transform = Mat4.identity().times(Mat4.scale(.1, .1, .1))
 
-        let shift_by= 3*Math.sin(t*3);
+        let shift_by= 5*Math.sin(t*3);
 
-        const model_transform_1 = model_transform.times(Mat4.translation(shift_by, 0, 0));
+        let bob = Math.PI/6 * Math.sin(2*t)
+
+
+        // row 1
+
+        const model_transform_1 = model_transform.times(Mat4.translation(shift_by, 0, 0))
+                                                    .times(Mat4.translation(0, 8, 0))
+                                                    .times(Mat4.rotation(bob, 0, 0, 1)); // rotate wrt z
 
 
         this.shapes.balloon.draw(context, program_state, model_transform_1, this.reg);
 
         const model_transform_2 = model_transform.times(Mat4.translation(shift_by, 0, 0))
-                                    .times(Mat4.translation(5, 0, 0)); //this translation away from other balloons should happen first
+                                    .times(Mat4.translation(5, 8, 0)) //this translation away from other balloons should happen before shift right and left
+                                    .times(Mat4.rotation(bob, 0, 0, 1));
         this.shapes.balloon.draw(context, program_state, model_transform_2, this.reg.override({color: hex_color("#66ff00")}));
 
         const model_transform_3 = model_transform.times(Mat4.translation(shift_by, 0, 0))
-                                    .times(Mat4.translation(-5, 0, 0));
+                                    .times(Mat4.translation(-5, 8, 0))
+                                    .times(Mat4.rotation(bob, 0, 0, 1));
         this.shapes.balloon.draw(context, program_state, model_transform_3, this.reg.override({color: hex_color("#FFA500")}));
 
+
         //row 2
-        const model_transform_4 = model_transform.times(Mat4.translation(5*-shift_by, 0, 0))
+        let bump = 10*(0.5*Math.sin(5*t))+0.5; // oscillates between 0 and 1
+
+        const model_transform_4 = model_transform.times(Mat4.translation(bump, 0, 0))
+                                                .times(Mat4.translation(8, 0, 0));
+
+        this.shapes.balloon.draw(context, program_state, model_transform_4, this.reg.override({color: hex_color("#2AAA8A")}));
+
+        const model_transform_5 = model_transform.times(Mat4.translation(-bump, 0, 0))
+                                            .times(Mat4.translation(-8, 0, 0));
+        this.shapes.balloon.draw(context, program_state, model_transform_5, this.reg.override({color: hex_color("#2AAA8A")}));
+
+        //row 3
+        const model_transform_7 = model_transform.times(Mat4.translation(3*-shift_by, 0, 0))
                                                         .times(Mat4.translation(0, -10, 0));
-        this.shapes.balloon.draw(context, program_state, model_transform_4, this.reg.override({color: hex_color("#0096FF")}));
+        this.shapes.balloon.draw(context, program_state, model_transform_7, this.reg.override({color: hex_color("#0096FF")}));
+
+
 
 
     }
