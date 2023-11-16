@@ -26,15 +26,15 @@ export class FinalProject extends Scene {
 
             // Color of the Box
             red_flat: new Material(new defs.Phong_Shader(),
-                {ambient: .4, diffusivity: .6, color: hex_color("#990000")}),
+                {ambient: .4, diffusivity: .6, specularity:0.5, color: hex_color("#990000")}),
 
             // BG white stripe color
             off_white_flat: new Material(new defs.Phong_Shader(),
-                {ambient: .4, diffusivity: .6, color: hex_color("#BBBBBB")}),
+                {ambient: .4, diffusivity: .6, specularity:0.5, color: hex_color("#BBBBBB")}),
 
             // BG red stripe color
             maroon_flat: new Material(new defs.Phong_Shader(),
-                {ambient: .4, diffusivity: 1.0, color: hex_color("#660011")}),
+                {ambient: .4, diffusivity: 1.0, specularity:0.5, color: hex_color("#660011")}),
         }
 
         this.initial_camera_location = Mat4.look_at(vec3(0, 0, 20), vec3(0, 0, 0), vec3(0, 1, 0));
