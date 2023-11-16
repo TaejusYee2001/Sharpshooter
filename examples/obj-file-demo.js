@@ -152,9 +152,9 @@ export class Obj_File_Demo extends Scene {                           // **Obj_Fi
         const t = program_state.animation_time / 1000
 
         //for (let i of [-1, 1]) {                                       // Spin the 3D model shapes as well.
-        const model_transform = Mat4.identity().times(Mat4.scale(.2, .2, .2))
+        const model_transform = Mat4.identity().times(Mat4.scale(.1, .1, .1))
 
-        let shift_by= Math.sin(t*3);
+        let shift_by= 3*Math.sin(t*3);
 
         const model_transform_1 = model_transform.times(Mat4.translation(shift_by, 0, 0));
 
@@ -169,12 +169,12 @@ export class Obj_File_Demo extends Scene {                           // **Obj_Fi
                                     .times(Mat4.translation(-5, 0, 0));
         this.shapes.balloon.draw(context, program_state, model_transform_3, this.reg.override({color: hex_color("#FFA500")}));
 
-        //}
+        //row 2
+        const model_transform_4 = model_transform.times(Mat4.translation(5*-shift_by, 0, 0))
+                                                        .times(Mat4.translation(0, -10, 0));
+        this.shapes.balloon.draw(context, program_state, model_transform_4, this.reg.override({color: hex_color("#0096FF")}));
 
-        //let model_transform = Mat4.identity();
 
-        /*this.shapes.balloon.draw(context, program_state, model_transform, new Material(new defs.Phong_Shader(),
-            {ambient: 0, diffusivity: 1, color: color(57, 255, 20)}));*/
     }
 
     show_explanation(document_element) {
