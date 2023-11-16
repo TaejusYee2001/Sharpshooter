@@ -1,4 +1,4 @@
-import {defs, tiny} from './common.js';
+import {defs, tiny} from './examples/common.js';
 // Pull these names into this module's scope for convenience:
 const {vec3, vec4, vec, color, hex_color, Mat4, Light, Shape, Material, Shader, Texture, Scene} = tiny;
 
@@ -103,7 +103,7 @@ export class Shape_From_File extends Shape {                                   /
     }
 }
 
-export class Obj_File_Demo extends Scene {                           // **Obj_File_Demo** show how to load a single 3D model from an OBJ file.
+export class Balloons extends Scene {                           // **Balloons** show how to load a single 3D model from an OBJ file.
                                                                      // Detailed model files can be used in place of simpler primitive-based
                                                                      // shapes to add complexity to a scene.  Simpler primitives in your scene
                                                                      // can just be thought of as placeholders until you find a model file
@@ -156,7 +156,7 @@ export class Obj_File_Demo extends Scene {                           // **Obj_Fi
 
         let shift_by= 5*Math.sin(t*3);
 
-        let bob = Math.PI/6 * Math.sin(2*t)
+        let bob = Math.PI/6 * Math.sin(3*t)
 
 
         // row 1
