@@ -72,35 +72,38 @@ export class FinalProject extends Scene {
         
         
 
+        // Scaling factor
+        let scale_factor = 1.4;
+
         // Box
         // Draw large rectangular box
         let model_transform = Mat4.identity()
             .times(Mat4.translation(0, 0, 0))
-            .times(Mat4.scale(8, 5, .125));
+            .times(Mat4.scale(8 * scale_factor, 5 * scale_factor, .125 * scale_factor));
         this.shapes.cube.draw(context, program_state, model_transform, this.materials.red_flat);
 
         // Draw top of the box
         model_transform = Mat4.identity()
-            .times(Mat4.translation(0, 5, 0.375))
-            .times(Mat4.scale(8.125, 0.125, 0.5));
+            .times(Mat4.translation(0, 5 * scale_factor, 0.375 * scale_factor))
+            .times(Mat4.scale(8.125 * scale_factor, 0.125 * scale_factor, 0.5 * scale_factor));
         this.shapes.cube.draw(context, program_state, model_transform, this.materials.red_flat);
 
         // Draw bottom of the box
         model_transform = Mat4.identity()
-            .times(Mat4.translation(0, -5, 0.375))
-            .times(Mat4.scale(-8.125, 0.375, 0.5));
+            .times(Mat4.translation(0, -5 * scale_factor, 0.375 * scale_factor))
+            .times(Mat4.scale(-8.125 * scale_factor, 0.375 * scale_factor, 0.5 * scale_factor));
         this.shapes.cube.draw(context, program_state, model_transform, this.materials.red_flat);
 
         // Draw left side of the box
         model_transform = Mat4.identity()
-            .times(Mat4.translation(-8, 0, 0.375))
-            .times(Mat4.scale(0.125, 5, 0.5));
+            .times(Mat4.translation(-8 * scale_factor, 0, 0.375 * scale_factor))
+            .times(Mat4.scale(0.125 * scale_factor, 5 * scale_factor, 0.5 * scale_factor));
         this.shapes.cube.draw(context, program_state, model_transform, this.materials.red_flat);
 
         // Draw right of the box
         model_transform = Mat4.identity()
-            .times(Mat4.translation(8, 0, 0.375))
-            .times(Mat4.scale(0.125, 5, 0.5));
+            .times(Mat4.translation(8 * scale_factor, 0, 0.375 * scale_factor))
+            .times(Mat4.scale(0.125 * scale_factor, 5 * scale_factor, 0.5 * scale_factor));
         this.shapes.cube.draw(context, program_state, model_transform, this.materials.red_flat);
         
 
