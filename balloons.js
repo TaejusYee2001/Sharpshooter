@@ -161,38 +161,48 @@ export class Balloons extends Scene {                           // **Balloons** 
 
         // row 1
 
-        const model_transform_1 = model_transform.times(Mat4.translation(shift_by, 0, 0))
+        const model_transform_1 = model_transform/*.times(Mat4.translation(shift_by, 0, 0))*/
                                                     .times(Mat4.translation(0, 8, 0))
                                                     .times(Mat4.rotation(bob, 0, 0, 1)); // rotate wrt z
 
 
         this.shapes.balloon.draw(context, program_state, model_transform_1, this.reg);
 
-        const model_transform_2 = model_transform.times(Mat4.translation(shift_by, 0, 0))
+        const model_transform_2 = model_transform/*.times(Mat4.translation(shift_by, 0, 0))*/
                                     .times(Mat4.translation(5, 8, 0)) //this translation away from other balloons should happen before shift right and left
                                     .times(Mat4.rotation(bob, 0, 0, 1));
-        this.shapes.balloon.draw(context, program_state, model_transform_2, this.reg.override({color: hex_color("#66ff00")}));
+        this.shapes.balloon.draw(context, program_state, model_transform_2, this.reg.override({color: hex_color("#FFA500")}));
 
-        const model_transform_3 = model_transform.times(Mat4.translation(shift_by, 0, 0))
+        const model_transform_3 = model_transform/*.times(Mat4.translation(shift_by, 0, 0))*/
                                     .times(Mat4.translation(-5, 8, 0))
                                     .times(Mat4.rotation(bob, 0, 0, 1));
         this.shapes.balloon.draw(context, program_state, model_transform_3, this.reg.override({color: hex_color("#FFA500")}));
 
+        const model_transform_row_1_1 = model_transform/*.times(Mat4.translation(shift_by, 0, 0))*/
+            .times(Mat4.translation(-10, 8, 0))
+            .times(Mat4.rotation(bob, 0, 0, 1));
+        this.shapes.balloon.draw(context, program_state, model_transform_row_1_1, this.reg.override({color: hex_color("#66ff00")}));
+
+        const model_transform_row_1_2 = model_transform/*.times(Mat4.translation(shift_by, 0, 0))*/
+            .times(Mat4.translation(10, 8, 0))
+            .times(Mat4.rotation(bob, 0, 0, 1));
+        this.shapes.balloon.draw(context, program_state, model_transform_row_1_2, this.reg.override({color: hex_color("#66ff00")}));
 
         //row 2
         let bump = 10*(0.5*Math.sin(5*t))+0.5; // oscillates between 0 and 1
 
         const model_transform_4 = model_transform.times(Mat4.translation(bump, 0, 0))
-                                                .times(Mat4.translation(8, 0, 0));
+                                                .times(Mat4.translation(7, 0, 0));
 
         this.shapes.balloon.draw(context, program_state, model_transform_4, this.reg.override({color: hex_color("#2AAA8A")}));
 
         const model_transform_5 = model_transform.times(Mat4.translation(-bump, 0, 0))
-                                            .times(Mat4.translation(-8, 0, 0));
+                                            .times(Mat4.translation(-7, 0, 0));
         this.shapes.balloon.draw(context, program_state, model_transform_5, this.reg.override({color: hex_color("#2AAA8A")}));
 
         //row 3
-        const model_transform_7 = model_transform.times(Mat4.translation(3*-shift_by, 0, 0))
+        let shift_by_faster= 12*Math.sin(t*5);
+        const model_transform_7 = model_transform.times(Mat4.translation(shift_by_faster, 0, 0))
                                                         .times(Mat4.translation(0, -10, 0));
         this.shapes.balloon.draw(context, program_state, model_transform_7, this.reg.override({color: hex_color("#0096FF")}));
 
@@ -200,10 +210,10 @@ export class Balloons extends Scene {                           // **Balloons** 
 
 
     }
-
+/*
     show_explanation(document_element) {
         document_element.innerHTML += "<p>This demo loads an external 3D model file of a teapot.  It uses a condensed version of the \"webgl-obj-loader.js\" "
             + "open source library, though this version is not guaranteed to be complete and may not handle some .OBJ files.  It is contained in the class \"Shape_From_File\". "
             + "</p><p>One of these teapots is lit with bump mapping.  Can you tell which one?</p>";
-    }
+    }*/
 }
