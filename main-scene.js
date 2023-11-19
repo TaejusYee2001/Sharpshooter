@@ -24,7 +24,7 @@ const {
 //                      as common.js into one file for you, such as "dependencies.js")
 
 const Minimal_Webgl_Demo = defs.Minimal_Webgl_Demo;
-
+const Movement_Controls = defs.Movement_Controls; 
 Object.assign(defs,
     {Axes_Viewer, Axes_Viewer_Test_Scene},
     {Inertia_Demo, Collision_Demo},
@@ -34,14 +34,16 @@ Object.assign(defs,
     {Surfaces_Demo},
     {Text_Demo},
     {Transforms_Sandbox},
-    {FinalProject}
+    {FinalProject}, 
 );
 
 // ******************** End extra step
 
 // (Can define Main_Scene's class here)
 
-const Main_Scene = Balloons; //FinalProject;
-const Additional_Scenes = [];
+
+const Main_Scene = FinalProject;
+const Additional_Scenes = []; //Add Movement_Controls to the brackets if you want to easily move the camera around the screen during testing/development
+
 
 export {Main_Scene, Additional_Scenes, Canvas_Widget, Code_Widget, Text_Widget, defs}
