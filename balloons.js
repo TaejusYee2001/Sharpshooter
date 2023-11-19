@@ -1,6 +1,6 @@
-import {defs, tiny} from './common.js';
+import {defs, tiny} from './examples/common.js';
 // Pull these names into this module's scope for convenience:
-const {vec3, vec4, vec, color, Mat4, Light, Shape, Material, Shader, Texture, Scene} = tiny;
+const {vec3, vec4, vec, color, hex_color, Mat4, Light, Shape, Material, Shader, Texture, Scene} = tiny;
 
 export class Shape_From_File extends Shape {                                   // **Shape_From_File** is a versatile standalone Shape that imports
                                                                                // all its arrays' data from an .obj 3D model file.
@@ -103,7 +103,7 @@ export class Shape_From_File extends Shape {                                   /
     }
 }
 
-export class Obj_File_Demo extends Scene {                           // **Obj_File_Demo** show how to load a single 3D model from an OBJ file.
+export class Balloons extends Scene {                           // **Balloons** show how to load a single 3D model from an OBJ file.
                                                                      // Detailed model files can be used in place of simpler primitive-based
                                                                      // shapes to add complexity to a scene.  Simpler primitives in your scene
                                                                      // can just be thought of as placeholders until you find a model file
@@ -113,11 +113,13 @@ export class Obj_File_Demo extends Scene {                           // **Obj_Fi
     constructor() {
         super();
         // Load the model file:
-        this.shapes = {"teapot": new Shape_From_File("assets/teapot.obj")};
+        //this.shapes = {"teapot": new Shape_From_File("assets/teapot.obj")};
+        this.shapes = {"balloon": new Shape_From_File("assets/balloon.obj")};
 
         // Don't create any DOM elements to control this scene:
         this.widget_options = {make_controls: false};
         // Non bump mapped:
+
         this.stars = new Material(new defs.Textured_Phong(1), {
             color: color(.5, .5, .5, 1),
             ambient: .3, diffusivity: .5, specularity: .5, texture: new Texture("assets/stars.png")
@@ -127,30 +129,91 @@ export class Obj_File_Demo extends Scene {                           // **Obj_Fi
             color: color(.5, .5, .5, 1),
             ambient: .3, diffusivity: .5, specularity: .5, texture: new Texture("assets/stars.png")
         });
+
+        this.reg = new Material(new defs.Textured_Phong(1), {
+            color: hex_color("#BC13FE"),
+            ambient: .2, diffusivity: 1, specularity: 1});
+
     }
 
     display(context, program_state) {
-        const t = program_state.animation_time;
+        //const t = program_state.animation_time;
 
         program_state.set_camera(Mat4.translation(0, 0, -5));    // Locate the camera here (inverted matrix).
         program_state.projection_transform = Mat4.perspective(Math.PI / 4, context.width / context.height, 1, 500);
         // A spinning light to show off the bump map:
-        program_state.lights = [new Light(
+        /*program_state.lights = [new Light(
             Mat4.rotation(t / 300, 1, 0, 0).times(vec4(3, 2, 10, 1)),
-            color(1, .7, .7, 1), 100000)];
+            color(1, .7, .7, 1), 100000)];*/
 
-        for (let i of [-1, 1]) {                                       // Spin the 3D model shapes as well.
-            const model_transform = Mat4.rotation(t / 2000, 0, 2, 1)
-                .times(Mat4.translation(2 * i, 0, 0))
-                .times(Mat4.rotation(t / 1500, -1, 2, 0))
-                .times(Mat4.rotation(-Math.PI / 2, 1, 0, 0));
-            this.shapes.teapot.draw(context, program_state, model_transform, i == 1 ? this.stars : this.bumps);
-        }
+        const light_position = vec4(0, 5, 5, 1);
+        program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 1000)];
+
+        const t = program_state.animation_time / 1000
+
+        //for (let i of [-1, 1]) {                                       // Spin the 3D model shapes as well.
+        const model_transform = Mat4.identity().times(Mat4.scale(.1, .1, .1))
+
+        let shift_by= 5*Math.sin(t*3);
+
+        let bob = Math.PI/6 * Math.sin(3*t)
+
+
+        // row 1
+
+        const model_transform_1 = model_transform/*.times(Mat4.translation(shift_by, 0, 0))*/
+                                                    .times(Mat4.translation(0, 8, 0))
+                                                    .times(Mat4.rotation(bob, 0, 0, 1)); // rotate wrt z
+
+
+        this.shapes.balloon.draw(context, program_state, model_transform_1, this.reg);
+
+        const model_transform_2 = model_transform/*.times(Mat4.translation(shift_by, 0, 0))*/
+                                    .times(Mat4.translation(5, 8, 0)) //this translation away from other balloons should happen before shift right and left
+                                    .times(Mat4.rotation(bob, 0, 0, 1));
+        this.shapes.balloon.draw(context, program_state, model_transform_2, this.reg.override({color: hex_color("#FFA500")}));
+
+        const model_transform_3 = model_transform/*.times(Mat4.translation(shift_by, 0, 0))*/
+                                    .times(Mat4.translation(-5, 8, 0))
+                                    .times(Mat4.rotation(bob, 0, 0, 1));
+        this.shapes.balloon.draw(context, program_state, model_transform_3, this.reg.override({color: hex_color("#FFA500")}));
+
+        const model_transform_row_1_1 = model_transform/*.times(Mat4.translation(shift_by, 0, 0))*/
+            .times(Mat4.translation(-10, 8, 0))
+            .times(Mat4.rotation(bob, 0, 0, 1));
+        this.shapes.balloon.draw(context, program_state, model_transform_row_1_1, this.reg.override({color: hex_color("#66ff00")}));
+
+        const model_transform_row_1_2 = model_transform/*.times(Mat4.translation(shift_by, 0, 0))*/
+            .times(Mat4.translation(10, 8, 0))
+            .times(Mat4.rotation(bob, 0, 0, 1));
+        this.shapes.balloon.draw(context, program_state, model_transform_row_1_2, this.reg.override({color: hex_color("#66ff00")}));
+
+        //row 2
+        let bump = 10*(0.5*Math.sin(5*t))+0.5; // oscillates between 0 and 1
+
+        const model_transform_4 = model_transform.times(Mat4.translation(bump, 0, 0))
+                                                .times(Mat4.translation(7, 0, 0));
+
+        this.shapes.balloon.draw(context, program_state, model_transform_4, this.reg.override({color: hex_color("#2AAA8A")}));
+
+        const model_transform_5 = model_transform.times(Mat4.translation(-bump, 0, 0))
+                                            .times(Mat4.translation(-7, 0, 0));
+        this.shapes.balloon.draw(context, program_state, model_transform_5, this.reg.override({color: hex_color("#2AAA8A")}));
+
+        //row 3
+        let shift_by_faster= 12*Math.sin(t*5);
+        const model_transform_7 = model_transform.times(Mat4.translation(shift_by_faster, 0, 0))
+                                                        .times(Mat4.translation(0, -10, 0));
+        this.shapes.balloon.draw(context, program_state, model_transform_7, this.reg.override({color: hex_color("#0096FF")}));
+
+
+
+
     }
-
+/*
     show_explanation(document_element) {
         document_element.innerHTML += "<p>This demo loads an external 3D model file of a teapot.  It uses a condensed version of the \"webgl-obj-loader.js\" "
             + "open source library, though this version is not guaranteed to be complete and may not handle some .OBJ files.  It is contained in the class \"Shape_From_File\". "
             + "</p><p>One of these teapots is lit with bump mapping.  Can you tell which one?</p>";
-    }
+    }*/
 }
