@@ -204,13 +204,15 @@ export class FinalProject extends Scene {
 			white: new Material(new defs.Basic_Shader()),
 			dart_metal: new Material(new defs.Textured_Phong(), {
 				ambient: 0.5,
-				diffusivity: 0.5,
-				specularity: 1,
+				diffusivity: 0,
+				specularity: 90,
+                smoothness:10,
 				texture: new Texture('assets/Dart Models and Textures/dart_resized.obj/Texture_9.png'),
 			}),
 
 			crosshair: new Material(new defs.Phong_Shader(), {
 				diffusivity: 1,
+                ambient:0.8,
 				specularity: 0,
 				color: hex_color('#eb4934'),
 			}),
@@ -220,13 +222,42 @@ export class FinalProject extends Scene {
 
        // BG white stripe color
        off_white_flat: new Material(new defs.Phong_Shader(),
-       {ambient: .4, diffusivity: .6, specularity:0.5, color: hex_color("#BBBBBB")}),
+       {ambient: 0.9, diffusivity: .6, specularity:0.5, color: hex_color("#BBBBBB")}),
 
        // BG red stripe color
        maroon_flat: new Material(new defs.Phong_Shader(),
-       {ambient: .4, diffusivity: 1.0, specularity:0.5, color: hex_color("#660011")}),
+       {ambient: 0.9, diffusivity: 1.0, specularity:0.5, color: hex_color("#660011")}),
 		};
-
+        this.collision_cubes={
+            floor: {
+				position: vec3(-3, -20, 0),
+				width: 40, // x
+				height: 1, //y
+				depth: 20, // z
+                normal: vec3(0,1,0),
+			},
+			wall: {
+				position: vec3(-3, 9, -21),
+				width: 40, //x
+				height: 30, //y
+				depth: 1, // z
+				normal: vec3(0, 0, 1),
+                
+			},
+            bounding_box: {
+				og_position: vec(null, null, null),
+				position: vec3(null, null, null),
+				width: 0.15, //x
+				height: 0.15, //y
+				depth: 0.9, //z
+				velocity: vec3(null, null, null),
+				stuck: false,
+				up_angle: 0,
+				side_angle: 0,
+				twist_angle: 0,
+			},
+        }
+        this.misc_cubes=[] //these are all cubes or rectangular bounding boxes that never need to be referred to by name -- filled in first frame
 		this.objects = {
 			//Note: All height/width/depth vals are half of the real height/width/depth, similar to a radius
 			dart: {
@@ -241,19 +272,7 @@ export class FinalProject extends Scene {
 				side_angle: 0,
 				twist_angle: 0,
 			},
-			floor: {
-				position: vec3(-3, -20, 0),
-				width: 40, // x
-				height: 1, //y
-				depth: 20, // z
-			},
-			wall: {
-				position: vec3(-3, 9, -21),
-				width: 40, //x
-				height: 30, //y
-				depth: 1, // z
-				normal: vec3(0, 0, 1),
-			},
+			
 			crosshair: {
 				position: vec3(0, 2, 0),
 				height: 1.5, //x
@@ -262,18 +281,7 @@ export class FinalProject extends Scene {
 				radius: 1.5,
 				radius2: 1.5 ** 2,
 			},
-			bounding_box: {
-				og_position: vec(null, null, null),
-				position: vec3(0, 0, 0),
-				width: 0.15, //x
-				height: 0.15, //y
-				depth: 0.9, //z
-				velocity: vec3(null, null, null),
-				stuck: false,
-				up_angle: 0,
-				side_angle: 0,
-				twist_angle: 0,
-			},
+			
 		};
 
 		/*Matrix & Program State*/
@@ -303,6 +311,7 @@ export class FinalProject extends Scene {
 		/*Misc*/
 		this.sim_start_time = null;
 		this.score = 0;
+        this.first_frame = true;
 	}
 	add_mouse_controls(canvas) {
 		// add_mouse_controls():  Attach HTML mouse events to the drawing canvas.
@@ -378,12 +387,16 @@ export class FinalProject extends Scene {
 	check_all_collisions(object) {
 		let collision = false;
 
-		Object.entries(this.objects).forEach(([key, value]) => {
+		Object.entries(this.collision_cubes).forEach(([key, value]) => {
 			//iterate through all objects
-			if (key != 'dart')
+			if (key != 'crosshair' && key != 'dart')
 				//for now since only checking if dart collides with objects, just skip dart
 				collision = collision || CheckCollisionCubeCube(value, object); //TODO: update this behavior to have any inputted object not collision check itself
 		});
+
+        for (var i=0; i< this.misc_cubes.length;i++){
+            collision = collision || CheckCollisionCubeCube(this.misc_cubes[i], object);
+        }
 		return collision;
 	}
 
@@ -486,12 +499,12 @@ export class FinalProject extends Scene {
 			//TODO: Right now we only check for where it will hit the wall, should adjust this to check if the ray is in the direction of the wall or the floor, then check for floor plane collision if needed
 			this.dart_ray = this.mouse_to_world_coords(program_state);
 			let ray_origin = this.eye_location;
-			let d = -1 * (this.objects.wall.position[2] + this.objects.wall.depth);
-			let collide_pos = CheckCollisionRayPlane(this.dart_ray, ray_origin, this.objects.wall.normal, d);
+			let d = -1 * (this.collision_cubes.wall.position[2] + this.collision_cubes.wall.depth);
+			let collide_pos = CheckCollisionRayPlane(this.dart_ray, ray_origin, this.collision_cubes.wall.normal, d);
 			this.dart_wall_point = vec3(
 				collide_pos[0],
 				collide_pos[1],
-				this.objects.wall.position[2] + this.objects.wall.depth
+				this.collision_cubes.wall.position[2] + this.collision_cubes.wall.depth
 			); //last coord is the point on the real wall where the dart would hit, instead of z=0
 
 			//Setting up initial variables so that projectile motion can be calculated for dart on each frame
@@ -510,8 +523,8 @@ export class FinalProject extends Scene {
 
 			this.objects.dart.og_position = vec3(x_pos_begin, y_pos_begin, z_pos_begin);
 
-			this.objects.bounding_box.og_position = this.objects.dart.og_position; //bounding box position, for debugging
-			this.objects.bounding_box.velocity = this.objects.dart.velocity;
+			this.collision_cubes.bounding_box.og_position = this.objects.dart.og_position; //bounding box position, for debugging
+			this.collision_cubes.bounding_box.velocity = this.objects.dart.velocity;
 
 			this.drawing_dart = true;
 			this.sim_start_time = t;
@@ -549,44 +562,88 @@ export class FinalProject extends Scene {
 
 		this.shapes.crosshair.draw(context, program_state, model_transform, this.materials.crosshair);
 	}
-draw_background(context, program_state, model_transform,t){
+draw_background(context, program_state, t){
   // Scaling factor
-        let scale_factor = 1.4;
+        let scale_factor = 3.8;
+
 
         // Box
+        
+        //on the first render, add all boxes to our array of misc_cubes - this array makes collision detection simpler
+        if (this.first_frame){
+            let positions =[];
+            let sizes=[];
+
+            //Back
+            positions.push(vec3(0,2,-19));
+            sizes.push(vec3(8 * scale_factor,5 * scale_factor,.125 * scale_factor))
+            //Top
+            positions.push(vec3(0, 5 * scale_factor +2, 0.375 * scale_factor -19));
+            sizes.push(vec3(8.125 * scale_factor, 0.125 * scale_factor, 0.5 * scale_factor));
+            //Bottom
+            positions.push(vec3(0, -5 * scale_factor +2, 0.375 * scale_factor -19));
+            sizes.push(vec3(-8.125 * scale_factor, 0.375 * scale_factor, 0.5 * scale_factor));
+            //Left
+            positions.push(vec3(-8 * scale_factor, 2, 0.375 * scale_factor -19));
+            sizes.push(vec3(0.125 * scale_factor, 5 * scale_factor, 0.5 * scale_factor));
+            //Right
+            positions.push(vec3(8 * scale_factor, 2, 0.375 * scale_factor -19 ));
+            sizes.push(vec3(0.125 * scale_factor, 5 * scale_factor, 0.5 * scale_factor));
+            
+            for (var i=0; i<5; i++) {
+                
+                this.misc_cubes.push({
+                    position: positions[i],
+                    width: sizes[i][0],
+                    height: sizes[i][1],
+                    depth: sizes[i][2],});
+            }
+
+            this.first_frame = false;   
+        
+        }
+
         // Draw large rectangular box
         let model_transform = Mat4.identity()
-            .times(Mat4.translation(0, 0, 0))
-            .times(Mat4.scale(8 * scale_factor, 5 * scale_factor, .125 * scale_factor));
+            .times(Mat4.translation(0,2,-19))
+            .times(Mat4.scale(8 * scale_factor,5 * scale_factor,.125 * scale_factor));
         this.shapes.cube.draw(context, program_state, model_transform, this.materials.red_flat);
 
         // Draw top of the box
+        
         model_transform = Mat4.identity()
-            .times(Mat4.translation(0, 5 * scale_factor, 0.375 * scale_factor))
+            .times(Mat4.translation(0, 5 * scale_factor +2, 0.375 * scale_factor -19))
             .times(Mat4.scale(8.125 * scale_factor, 0.125 * scale_factor, 0.5 * scale_factor));
         this.shapes.cube.draw(context, program_state, model_transform, this.materials.red_flat);
-
+       
         // Draw bottom of the box
+        
         model_transform = Mat4.identity()
-            .times(Mat4.translation(0, -5 * scale_factor, 0.375 * scale_factor))
+            .times(Mat4.translation(0, -5 * scale_factor +2, 0.375 * scale_factor -19))
             .times(Mat4.scale(-8.125 * scale_factor, 0.375 * scale_factor, 0.5 * scale_factor));
         this.shapes.cube.draw(context, program_state, model_transform, this.materials.red_flat);
-
+        
+        
         // Draw left side of the box
+       
+      
         model_transform = Mat4.identity()
-            .times(Mat4.translation(-8 * scale_factor, 0, 0.375 * scale_factor))
-            .times(Mat4.scale(0.125 * scale_factor, 5 * scale_factor, 0.5 * scale_factor));
-        this.shapes.cube.draw(context, program_state, model_transform, this.materials.red_flat);
-
-        // Draw right of the box
-        model_transform = Mat4.identity()
-            .times(Mat4.translation(8 * scale_factor, 0, 0.375 * scale_factor))
+            .times(Mat4.translation(-8 * scale_factor, 2, 0.375 * scale_factor -19))
             .times(Mat4.scale(0.125 * scale_factor, 5 * scale_factor, 0.5 * scale_factor));
         this.shapes.cube.draw(context, program_state, model_transform, this.materials.red_flat);
         
 
-        let n = 10; // Number of pairs of stripes 
-        let stripe_width = 3;
+        // Draw right of the box
+        
+        model_transform = Mat4.identity()
+            .times(Mat4.translation(8 * scale_factor, 2, 0.375 * scale_factor -19 ))
+            .times(Mat4.scale(0.125 * scale_factor, 5 * scale_factor, 0.5 * scale_factor));
+        this.shapes.cube.draw(context, program_state, model_transform, this.materials.red_flat);
+        
+
+
+        let n = 30; // Number of pairs of stripes 
+        let stripe_width = 4.5;
 
         // The total width covered by the stripes
         let total_stripe_width = n * stripe_width * 2;
@@ -602,19 +659,20 @@ draw_background(context, program_state, model_transform,t){
 
             // Create setup for white stripes
             let model_transform_white = Mat4.identity()
-            .times(Mat4.translation(white_stripe_position, 0, -10))
-            .times(Mat4.scale(stripe_width/2, 15, 0.5));
+            .times(Mat4.translation(white_stripe_position, 0, -19))
+            .times(Mat4.scale(stripe_width/2, 30, 0));
 
             // Create setup for red stripes
             let model_transform_maroon = Mat4.identity()
-            .times(Mat4.translation(red_stripe_position, 0, -10))
-            .times(Mat4.scale(stripe_width/2, 15, 0.5));
+            .times(Mat4.translation(red_stripe_position, 0, -19))
+            .times(Mat4.scale(stripe_width/2, 30, 0));
 
             // Draw stripes
             this.shapes.cube.draw(context, program_state, model_transform_white, this.materials.maroon_flat);
             this.shapes.cube.draw(context, program_state, model_transform_maroon, this.materials.off_white_flat);
             
-}
+        }
+    }
 
 
 
@@ -654,7 +712,7 @@ draw_background(context, program_state, model_transform,t){
 
 	draw_dart_coll_box(context, program_state, model_transform, t) {
 		let coll_transform = this.calc_projectile_object(
-			this.objects.bounding_box,
+			this.collision_cubes.bounding_box,
 			context,
 			program_state,
 			model_transform,
@@ -696,7 +754,7 @@ This also means there's typically a little bit of space between the wall and the
 
 		/*Lighting*/
     // The parameters of the Light are: position, color, size
-		const light_position = vec4(0, 5, 20, 1);
+		const light_position = vec4(-10, 10, 20, 1);
 		// The parameters of the Light are: position, color, size
 		program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 1000)];
 
@@ -707,7 +765,7 @@ This also means there's typically a little bit of space between the wall and the
 
 		/*Drawing*/
     this.draw_background(context,program_state,model_transform,t);
-		this.draw_floor(context, program_state, model_transform);
+		//this.draw_floor(context, program_state, model_transform);
 		this.draw_wall(context, program_state, model_transform);
 		this.draw_crosshair(context, program_state, model_transform, t);
 		this.draw_dart(context, program_state, model_transform, t);
@@ -743,8 +801,8 @@ calc_projectile_object(object, context, program_state,model_transform, t){
     let angle = object.stuck ? old_angle : Math.atan(y_deriv/x_deriv);
      //model_transform = model_transform.times(Mat4.rotation(angle,0,0,1));
     //TODO: Check if theres a better way to organize/perform all collisions
-    let collisionWall = Boolean(CheckCollisionCubeSphere(this.objects.wall, object));
-    let collisionFloor = Boolean(CheckCollisionCubeSphere(this.objects.floor, object));
+    let collisionWall = Boolean(CheckCollisionCubeSphere(this.collision_cubes.wall, object));
+    let collisionFloor = Boolean(CheckCollisionCubeSphere(this.collision_cubes.floor, object));
 
     if ( collisionWall|| collisionFloor){
         //If there was a collision, just set ball to previous position - in our project, balloon would probably disappear and dart might too 
