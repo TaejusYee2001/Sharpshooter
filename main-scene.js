@@ -35,6 +35,7 @@ Object.assign(defs,
     {Text_Demo},
     {Transforms_Sandbox},
     {FinalProject}, 
+    
 );
 
 // ******************** End extra step
@@ -43,7 +44,7 @@ Object.assign(defs,
 
 
 const Main_Scene = FinalProject;
-const Additional_Scenes = []; //Add Movement_Controls to the brackets if you want to easily move the camera around the screen during testing/development
+const Additional_Scenes = [Movement_Controls]; //Add Movement_Controls to the brackets if you want to easily move the camera around the screen during testing/development
 
 
 export {Main_Scene, Additional_Scenes, Canvas_Widget, Code_Widget, Text_Widget, defs}

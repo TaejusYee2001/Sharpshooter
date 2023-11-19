@@ -184,8 +184,8 @@ export class FinalProject extends Scene {
 			dart: new Shape_From_File('assets/Dart Models and Textures/dart_resized.obj/dart_resized.obj'),
 			crosshair: new Shape_From_File('assets/crosshair.obj/crosshair.obj'),
 			bounding_box: new Cube_Outline(),
+			balloon: new Shape_From_File('assets/balloon.obj'),
 		};
-
 		// *** Materials
 		this.materials = {
 			//Example material
@@ -206,35 +206,53 @@ export class FinalProject extends Scene {
 				ambient: 0.5,
 				diffusivity: 0,
 				specularity: 90,
-                smoothness:10,
+				smoothness: 10,
 				texture: new Texture('assets/Dart Models and Textures/dart_resized.obj/Texture_9.png'),
 			}),
 
 			crosshair: new Material(new defs.Phong_Shader(), {
 				diffusivity: 1,
-                ambient:0.8,
+				ambient: 0.8,
 				specularity: 0,
 				color: hex_color('#eb4934'),
 			}),
-       // Color of the Box
-       red_flat: new Material(new defs.Phong_Shader(),
-       {ambient: .4, diffusivity: .6, specularity:0.5, color: hex_color("#990000")}),
+			// Color of the Box
+			red_flat: new Material(new defs.Phong_Shader(), {
+				ambient: 0.4,
+				diffusivity: 0.6,
+				specularity: 0.5,
+				color: hex_color('#990000'),
+			}),
 
-       // BG white stripe color
-       off_white_flat: new Material(new defs.Phong_Shader(),
-       {ambient: 0.9, diffusivity: .6, specularity:0.5, color: hex_color("#BBBBBB")}),
+			// BG white stripe color
+			off_white_flat: new Material(new defs.Phong_Shader(), {
+				ambient: 0.9,
+				diffusivity: 0.6,
+				specularity: 0.5,
+				color: hex_color('#BBBBBB'),
+			}),
 
-       // BG red stripe color
-       maroon_flat: new Material(new defs.Phong_Shader(),
-       {ambient: 0.9, diffusivity: 1.0, specularity:0.5, color: hex_color("#660011")}),
+			// BG red stripe color
+			maroon_flat: new Material(new defs.Phong_Shader(), {
+				ambient: 0.9,
+				diffusivity: 1.0,
+				specularity: 0.5,
+				color: hex_color('#660011'),
+			}),
+			balloon: new Material(new defs.Textured_Phong(1), {
+				color: hex_color('#BC13FE'),
+				ambient: 0.2,
+				diffusivity: 1,
+				specularity: 1,
+			}),
 		};
-        this.collision_cubes={
-            floor: {
+		this.collision_cubes = {
+			floor: {
 				position: vec3(-3, -20, 0),
 				width: 40, // x
 				height: 1, //y
 				depth: 20, // z
-                normal: vec3(0,1,0),
+				normal: vec3(0, 1, 0),
 			},
 			wall: {
 				position: vec3(-3, 9, -21),
@@ -242,9 +260,8 @@ export class FinalProject extends Scene {
 				height: 30, //y
 				depth: 1, // z
 				normal: vec3(0, 0, 1),
-                
 			},
-            bounding_box: {
+			bounding_box: {
 				og_position: vec(null, null, null),
 				position: vec3(null, null, null),
 				width: 0.15, //x
@@ -256,8 +273,9 @@ export class FinalProject extends Scene {
 				side_angle: 0,
 				twist_angle: 0,
 			},
-        }
-        this.misc_cubes=[] //these are all cubes or rectangular bounding boxes that never need to be referred to by name -- filled in first frame
+		};
+		this.misc_cubes = []; //these are all cubes or rectangular bounding boxes that never need to be referred to by name -- filled in first frame
+		this.balloons = []; //all balloons will be filled in here
 		this.objects = {
 			//Note: All height/width/depth vals are half of the real height/width/depth, similar to a radius
 			dart: {
@@ -272,7 +290,7 @@ export class FinalProject extends Scene {
 				side_angle: 0,
 				twist_angle: 0,
 			},
-			
+
 			crosshair: {
 				position: vec3(0, 2, 0),
 				height: 1.5, //x
@@ -281,7 +299,6 @@ export class FinalProject extends Scene {
 				radius: 1.5,
 				radius2: 1.5 ** 2,
 			},
-			
 		};
 
 		/*Matrix & Program State*/
@@ -311,7 +328,7 @@ export class FinalProject extends Scene {
 		/*Misc*/
 		this.sim_start_time = null;
 		this.score = 0;
-        this.first_frame = true;
+		this.first_frame = true;
 	}
 	add_mouse_controls(canvas) {
 		// add_mouse_controls():  Attach HTML mouse events to the drawing canvas.
@@ -394,9 +411,9 @@ export class FinalProject extends Scene {
 				collision = collision || CheckCollisionCubeCube(value, object); //TODO: update this behavior to have any inputted object not collision check itself
 		});
 
-        for (var i=0; i< this.misc_cubes.length;i++){
-            collision = collision || CheckCollisionCubeCube(this.misc_cubes[i], object);
-        }
+		for (var i = 0; i < this.misc_cubes.length; i++) {
+			collision = collision || CheckCollisionCubeCube(this.misc_cubes[i], object);
+		}
 		return collision;
 	}
 
@@ -411,9 +428,9 @@ export class FinalProject extends Scene {
 
 		//Basic Projectile motion
 		let og_pos = object.og_position;
-        let x_pos = og_pos[0] + v[0] * t;
+		let x_pos = og_pos[0] + v[0] * t;
 		let y_pos = og_pos[1] + v[1] * t - 0.5 * 9.8 * t ** 2;
-        let z_pos = og_pos[2] + v[2] * t;
+		let z_pos = og_pos[2] + v[2] * t;
 
 		//Set an old and new position so we can check for collisions with the new position
 		let old_pos = object.position;
@@ -439,7 +456,7 @@ export class FinalProject extends Scene {
 		}
 		let twist_angle = object.stuck ? old_twist_angle : -2 * t;
 
-        //Collision check to see if dart should keep moving or return to last valid position
+		//Collision check to see if dart should keep moving or return to last valid position
 		let collision_check = this.check_all_collisions(object);
 
 		if (collision_check) {
@@ -483,15 +500,13 @@ export class FinalProject extends Scene {
 			let new_pos = CheckCollisionRayPlane(ray_world, ray_origin, plane_normal, d); //newpos will be null if somehow no collision - shouldn't be possible though
 
 			new_pos[2] = this.objects.crosshair.position[2]; //overwrite z value with the real z position of the crosshair (crosshair stays in one plane)
-			
-            if (new_pos) {
+
+			if (new_pos) {
 				//checking its not null
 				this.obj_picked_pos = new_pos;
 				this.objects.crosshair.position = new_pos;
 			}
-		} 
-        
-        else if (this.fire_dart) {
+		} else if (this.fire_dart) {
 			console.log('Fire dart');
 			this.fire_dart = false;
 			this.dart_ready = false;
@@ -510,12 +525,11 @@ export class FinalProject extends Scene {
 			//Setting up initial variables so that projectile motion can be calculated for dart on each frame
 			let final_time = this.travel_time; //The final time when the dart should hit the wall
 
-            
 			let x_pos_begin = this.dart_origin[0];
 			let z_pos_begin = this.dart_origin[2];
 			let y_pos_begin = this.dart_origin[1];
 
-            /*Calculate needed velocity to reach point on the wall based on original dart position */
+			/*Calculate needed velocity to reach point on the wall based on original dart position */
 			this.objects.dart.velocity[0] = (this.dart_wall_point[0] - x_pos_begin) / final_time;
 			this.objects.dart.velocity[1] =
 				(this.dart_wall_point[1] - y_pos_begin + 0.5 * 9.8 * final_time ** 2) / final_time;
@@ -562,119 +576,177 @@ export class FinalProject extends Scene {
 
 		this.shapes.crosshair.draw(context, program_state, model_transform, this.materials.crosshair);
 	}
-draw_background(context, program_state, t){
-  // Scaling factor
-        let scale_factor = 3.8;
+	draw_background(context, program_state, t) {
+		// Scaling factor
+		let scale_factor = 3.8;
 
+		// Box
 
-        // Box
-        
-        //on the first render, add all boxes to our array of misc_cubes - this array makes collision detection simpler
-        if (this.first_frame){
-            let positions =[];
-            let sizes=[];
+		//on the first render, add all boxes to our array of misc_cubes - this array makes collision detection simpler
+		if (this.first_frame) {
+			let positions = [];
+			let sizes = [];
 
-            //Back
-            positions.push(vec3(0,2,-19));
-            sizes.push(vec3(8 * scale_factor,5 * scale_factor,.125 * scale_factor))
-            //Top
-            positions.push(vec3(0, 5 * scale_factor +2, 0.375 * scale_factor -19));
-            sizes.push(vec3(8.125 * scale_factor, 0.125 * scale_factor, 0.5 * scale_factor));
-            //Bottom
-            positions.push(vec3(0, -5 * scale_factor +2, 0.375 * scale_factor -19));
-            sizes.push(vec3(-8.125 * scale_factor, 0.375 * scale_factor, 0.5 * scale_factor));
-            //Left
-            positions.push(vec3(-8 * scale_factor, 2, 0.375 * scale_factor -19));
-            sizes.push(vec3(0.125 * scale_factor, 5 * scale_factor, 0.5 * scale_factor));
-            //Right
-            positions.push(vec3(8 * scale_factor, 2, 0.375 * scale_factor -19 ));
-            sizes.push(vec3(0.125 * scale_factor, 5 * scale_factor, 0.5 * scale_factor));
-            
-            for (var i=0; i<5; i++) {
-                
-                this.misc_cubes.push({
-                    position: positions[i],
-                    width: sizes[i][0],
-                    height: sizes[i][1],
-                    depth: sizes[i][2],});
-            }
+			//Back
+			positions.push(vec3(0, 2, -19));
+			sizes.push(vec3(8 * scale_factor, 5 * scale_factor, 0.125 * scale_factor));
+			//Top
+			positions.push(vec3(0, 5 * scale_factor + 2, 0.375 * scale_factor - 19));
+			sizes.push(vec3(8.125 * scale_factor, 0.125 * scale_factor, 0.5 * scale_factor));
+			//Bottom
+			positions.push(vec3(0, -5 * scale_factor + 2, 0.375 * scale_factor - 19));
+			sizes.push(vec3(-8.125 * scale_factor, 0.375 * scale_factor, 0.5 * scale_factor));
+			//Left
+			positions.push(vec3(-8 * scale_factor, 2, 0.375 * scale_factor - 19));
+			sizes.push(vec3(0.125 * scale_factor, 5 * scale_factor, 0.5 * scale_factor));
+			//Right
+			positions.push(vec3(8 * scale_factor, 2, 0.375 * scale_factor - 19));
+			sizes.push(vec3(0.125 * scale_factor, 5 * scale_factor, 0.5 * scale_factor));
 
-            this.first_frame = false;   
-        
-        }
+			for (var i = 0; i < 5; i++) {
+				this.misc_cubes.push({
+					position: positions[i],
+					width: sizes[i][0],
+					height: sizes[i][1],
+					depth: sizes[i][2],
+				});
+			}
 
-        // Draw large rectangular box
-        let model_transform = Mat4.identity()
-            .times(Mat4.translation(0,2,-19))
-            .times(Mat4.scale(8 * scale_factor,5 * scale_factor,.125 * scale_factor));
-        this.shapes.cube.draw(context, program_state, model_transform, this.materials.red_flat);
+			this.first_frame = false;
+		}
 
-        // Draw top of the box
-        
-        model_transform = Mat4.identity()
-            .times(Mat4.translation(0, 5 * scale_factor +2, 0.375 * scale_factor -19))
-            .times(Mat4.scale(8.125 * scale_factor, 0.125 * scale_factor, 0.5 * scale_factor));
-        this.shapes.cube.draw(context, program_state, model_transform, this.materials.red_flat);
-       
-        // Draw bottom of the box
-        
-        model_transform = Mat4.identity()
-            .times(Mat4.translation(0, -5 * scale_factor +2, 0.375 * scale_factor -19))
-            .times(Mat4.scale(-8.125 * scale_factor, 0.375 * scale_factor, 0.5 * scale_factor));
-        this.shapes.cube.draw(context, program_state, model_transform, this.materials.red_flat);
-        
-        
-        // Draw left side of the box
-       
-      
-        model_transform = Mat4.identity()
-            .times(Mat4.translation(-8 * scale_factor, 2, 0.375 * scale_factor -19))
-            .times(Mat4.scale(0.125 * scale_factor, 5 * scale_factor, 0.5 * scale_factor));
-        this.shapes.cube.draw(context, program_state, model_transform, this.materials.red_flat);
-        
+		// Draw large rectangular box
+		let model_transform = Mat4.identity()
+			.times(Mat4.translation(0, 2, -19))
+			.times(Mat4.scale(8 * scale_factor, 5 * scale_factor, 0.125 * scale_factor));
+		this.shapes.cube.draw(context, program_state, model_transform, this.materials.red_flat);
 
-        // Draw right of the box
-        
-        model_transform = Mat4.identity()
-            .times(Mat4.translation(8 * scale_factor, 2, 0.375 * scale_factor -19 ))
-            .times(Mat4.scale(0.125 * scale_factor, 5 * scale_factor, 0.5 * scale_factor));
-        this.shapes.cube.draw(context, program_state, model_transform, this.materials.red_flat);
-        
+		// Draw top of the box
 
+		model_transform = Mat4.identity()
+			.times(Mat4.translation(0, 5 * scale_factor + 2, 0.375 * scale_factor - 19))
+			.times(Mat4.scale(8.125 * scale_factor, 0.125 * scale_factor, 0.5 * scale_factor));
+		this.shapes.cube.draw(context, program_state, model_transform, this.materials.red_flat);
 
-        let n = 30; // Number of pairs of stripes 
-        let stripe_width = 4.5;
+		// Draw bottom of the box
 
-        // The total width covered by the stripes
-        let total_stripe_width = n * stripe_width * 2;
+		model_transform = Mat4.identity()
+			.times(Mat4.translation(0, -5 * scale_factor + 2, 0.375 * scale_factor - 19))
+			.times(Mat4.scale(-8.125 * scale_factor, 0.375 * scale_factor, 0.5 * scale_factor));
+		this.shapes.cube.draw(context, program_state, model_transform, this.materials.red_flat);
 
-        // Create stripes that go from left to right
-        for (let i = 0; i < n; i++) {
-            // Calculate the position for the white stripe
-            // Shift the starting position to the left edge of the box
-            let white_stripe_position = - total_stripe_width / 2 + i * stripe_width * 2;
+		// Draw left side of the box
 
-            // The red stripe is positioned right next to the white stripe
-            let red_stripe_position = white_stripe_position + stripe_width;
+		model_transform = Mat4.identity()
+			.times(Mat4.translation(-8 * scale_factor, 2, 0.375 * scale_factor - 19))
+			.times(Mat4.scale(0.125 * scale_factor, 5 * scale_factor, 0.5 * scale_factor));
+		this.shapes.cube.draw(context, program_state, model_transform, this.materials.red_flat);
 
-            // Create setup for white stripes
-            let model_transform_white = Mat4.identity()
-            .times(Mat4.translation(white_stripe_position, 0, -19))
-            .times(Mat4.scale(stripe_width/2, 30, 0));
+		// Draw right of the box
 
-            // Create setup for red stripes
-            let model_transform_maroon = Mat4.identity()
-            .times(Mat4.translation(red_stripe_position, 0, -19))
-            .times(Mat4.scale(stripe_width/2, 30, 0));
+		model_transform = Mat4.identity()
+			.times(Mat4.translation(8 * scale_factor, 2, 0.375 * scale_factor - 19))
+			.times(Mat4.scale(0.125 * scale_factor, 5 * scale_factor, 0.5 * scale_factor));
+		this.shapes.cube.draw(context, program_state, model_transform, this.materials.red_flat);
 
-            // Draw stripes
-            this.shapes.cube.draw(context, program_state, model_transform_white, this.materials.maroon_flat);
-            this.shapes.cube.draw(context, program_state, model_transform_maroon, this.materials.off_white_flat);
-            
-        }
-    }
+		let n = 30; // Number of pairs of stripes
+		let stripe_width = 4.5;
 
+		// The total width covered by the stripes
+		let total_stripe_width = n * stripe_width * 2;
 
+		// Create stripes that go from left to right
+		for (let i = 0; i < n; i++) {
+			// Calculate the position for the white stripe
+			// Shift the starting position to the left edge of the box
+			let white_stripe_position = -total_stripe_width / 2 + i * stripe_width * 2;
+
+			// The red stripe is positioned right next to the white stripe
+			let red_stripe_position = white_stripe_position + stripe_width;
+
+			// Create setup for white stripes
+			let model_transform_white = Mat4.identity()
+				.times(Mat4.translation(white_stripe_position, 0, -19))
+				.times(Mat4.scale(stripe_width / 2, 30, 0));
+
+			// Create setup for red stripes
+			let model_transform_maroon = Mat4.identity()
+				.times(Mat4.translation(red_stripe_position, 0, -19))
+				.times(Mat4.scale(stripe_width / 2, 30, 0));
+
+			// Draw stripes
+			this.shapes.cube.draw(context, program_state, model_transform_white, this.materials.maroon_flat);
+			this.shapes.cube.draw(context, program_state, model_transform_maroon, this.materials.off_white_flat);
+		}
+	}
+	draw_balloons(context, program_state, t) {
+		const model_transform = Mat4.identity().times(Mat4.scale(0.1, 0.1, 0.1));
+
+		let shift_by = 5 * Math.sin(t * 3);
+
+		let bob = (Math.PI / 6) * Math.sin(3 * t);
+
+		// row 1
+		const scale_up = 13;
+		const z_pos = -11;
+
+		for (let i = -15; i < 20; i += 5) {
+			let balloon_transform = model_transform //.times(Mat4.translation(shift_by,0,0))
+				.times(Mat4.scale(scale_up, scale_up, scale_up))
+				.times(Mat4.translation(i, 8, z_pos))
+				.times(Mat4.rotation(bob, 0, 0, 1)); // rotate wrt z
+			let color = null;
+			if (Math.abs(i) == 15) color = '#fff700';
+			else if (Math.abs(i) == 10) color = '#66ff00';
+			else if (Math.abs(i) == 5) color = '#ff7700';
+			else color = '#BC13FE';
+			this.shapes.balloon.draw(
+				context,
+				program_state,
+				balloon_transform,
+				this.materials.balloon.override({ color: hex_color(color) })
+			);
+		}
+
+		//row 2
+		let x_pos = 13 * (0.5 * Math.sin(5 * t)) + 2; // oscillates between 0 and 1
+
+		const model_transform_4 = model_transform
+			.times(Mat4.scale(scale_up, scale_up, scale_up))
+			.times(Mat4.translation(x_pos, 0, z_pos))
+			.times(Mat4.translation(7, 0, 0));
+
+		this.shapes.balloon.draw(
+			context,
+			program_state,
+			model_transform_4,
+			this.materials.balloon.override({ color: hex_color('#2AAA8A') })
+		);
+
+		const model_transform_5 = model_transform
+			.times(Mat4.scale(scale_up, scale_up, scale_up))
+			.times(Mat4.translation(-x_pos, 0, z_pos))
+			.times(Mat4.translation(-7, 0, 0));
+		this.shapes.balloon.draw(
+			context,
+			program_state,
+			model_transform_5,
+			this.materials.balloon.override({ color: hex_color('#2AAA8A') })
+		);
+
+		//row 3
+		let shift_by_faster = 15 * Math.sin(t * 5);
+		const model_transform_7 = model_transform
+			.times(Mat4.scale(scale_up, scale_up, scale_up))
+			.times(Mat4.translation(shift_by_faster, 0, 0))
+			.times(Mat4.translation(0, -10, z_pos));
+		this.shapes.balloon.draw(
+			context,
+			program_state,
+			model_transform_7,
+			this.materials.balloon.override({ color: hex_color('#0096FF') })
+		);
+	}
 
 	draw_floor(context, program_state, model_transform) {
 		//Drawing an arbitrary floor
@@ -753,7 +825,7 @@ This also means there's typically a little bit of space between the wall and the
 		}
 
 		/*Lighting*/
-    // The parameters of the Light are: position, color, size
+		// The parameters of the Light are: position, color, size
 		const light_position = vec4(-10, 10, 20, 1);
 		// The parameters of the Light are: position, color, size
 		program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 1000)];
@@ -764,7 +836,8 @@ This also means there's typically a little bit of space between the wall and the
 		let model_transform = Mat4.identity();
 
 		/*Drawing*/
-    this.draw_background(context,program_state,model_transform,t);
+		this.draw_background(context, program_state, model_transform, t);
+		this.draw_balloons(context, program_state, t);
 		//this.draw_floor(context, program_state, model_transform);
 		this.draw_wall(context, program_state, model_transform);
 		this.draw_crosshair(context, program_state, model_transform, t);
