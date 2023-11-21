@@ -1,5 +1,10 @@
 import { defs, tiny } from "./examples/common.js";
 import { Shape_From_File } from "./examples/obj-file-demo.js";
+import {Cube_Outline} from "./cube-outline.js";
+import {CheckCollisionCubeCube, 
+  CheckCollisionCubeSphere, 
+  CheckCollisionRaySphere, 
+  CheckCollisionRayPlane} from "./collision-checkers.js";
 const {
   Vector,
   Vector3,
@@ -18,160 +23,7 @@ const {
   Texture,
 } = tiny;
 
-/*Can delete cube outline later, just used for deciding bounding boxes*/
-class Cube_Outline extends Shape {
-  constructor() {
-    super("position", "color");
-    //  (Requirement 5).
-    // When a set of lines is used in graphics, you should think of the list entries as
-    // broken down into pairs; each pair of vertices will be drawn as a line segment.
-    // Note: since the outline is rendered with Basic_shader, you need to redefine the position and color of each vertex
 
-    this.arrays.position = Vector3.cast(
-      [-1, -1, -1],
-      [-1, 1, -1],
-      [-1, 1, -1],
-      [1, 1, -1],
-      [1, 1, -1],
-      [1, -1, -1],
-      [1, -1, -1],
-      [-1, -1, -1],
-      [1, -1, -1],
-      [1, -1, 1],
-      [1, -1, 1],
-      [-1, -1, 1],
-      [-1, -1, 1],
-      [-1, -1, -1],
-      [1, -1, 1],
-      [1, 1, 1],
-      [1, 1, 1],
-      [-1, 1, 1],
-      [-1, 1, 1],
-      [-1, -1, 1],
-      [-1, 1, 1],
-      [-1, 1, -1],
-      [1, 1, -1],
-      [1, 1, 1]
-    );
-    this.arrays.color = [
-      color(1, 1, 1, 1.0),
-      color(1, 1, 1, 1.0),
-      color(1, 1, 1, 1.0),
-      color(1, 1, 1, 1.0),
-      color(1, 1, 1, 1.0),
-      color(1, 1, 1, 1.0),
-      color(1, 1, 1, 1.0),
-      color(1, 1, 1, 1.0),
-      color(1, 1, 1, 1.0),
-      color(1, 1, 1, 1.0),
-      color(1, 1, 1, 1.0),
-      color(1, 1, 1, 1.0),
-      color(1, 1, 1, 1.0),
-      color(1, 1, 1, 1.0),
-      color(1, 1, 1, 1.0),
-      color(1, 1, 1, 1.0),
-      color(1, 1, 1, 1.0),
-      color(1, 1, 1, 1.0),
-      color(1, 1, 1, 1.0),
-      color(1, 1, 1, 1.0),
-      color(1, 1, 1, 1.0),
-      color(1, 1, 1, 1.0),
-      color(1, 1, 1, 1.0),
-      color(1, 1, 1, 1.0),
-    ]; //set to full white
-
-    this.indices = false;
-  }
-}
-/*Returns whether there was a collision between two inputted cubes (rectangular prisms) */
-function CheckCollisionCubeCube(cube1, cube2) {
-  //AABB Collision for two cubes
-
-  //Checks if the right side of cube 1 is to the right of the left side of cube 2, then vice versa
-  let collisionX = Boolean(
-    cube1.position[0] + cube1.width >= cube2.position[0] - cube2.width &&
-      cube2.position[0] + cube2.width >= cube1.position[0] - cube1.width
-  );
-
-  //Checks if the top of cube 1 is above the bottom of cube 2, then checks if the top of cube 2 is above the bottom of cube 1
-  let collisionY = Boolean(
-    cube1.position[1] + cube1.height >= cube2.position[1] - cube2.height &&
-      cube2.position[1] + cube2.height >= cube1.position[1] - cube1.height
-  );
-
-  //Similar check in z dir
-  let collisionZ = Boolean(
-    cube1.position[2] + cube1.depth >= cube2.position[2] - cube2.depth &&
-      cube2.position[2] + cube2.depth >= cube1.position[2] - cube1.depth
-  );
-
-  //If all conditions satisfied, they must be overlapping/colliding
-  return collisionX && collisionY && collisionZ;
-}
-
-/*Clamp Function
-Clamp functions clamp a value between a min and max - 
-in this case, we will clamp a line from the 'center of the cube' to the 'center of the sphere',
-between a min of 'the center of the cube' and a max of 'the outer edge of the cube' (we repeat for x, y, z)
-*/
-function clamp(value, min_val, max_val) {
-  return Math.max(min_val, Math.min(max_val, value));
-}
-/*Returns whether there was a collision between an inputted cube and sphere */
-function CheckCollisionCubeSphere(cube, sphere) {
-  //AABB Collision for a cube and a sphere
-
-  //Get a line from center of cube to center of sphere
-  let difference = sphere.position.minus(cube.position);
-  let cube_vals = vec3(cube.width, cube.height, cube.depth);
-
-  //Clamp the line so it cannot pass the edge of the cube
-  let clamped = vec3(
-    clamp(difference[0], -cube_vals[0], cube_vals[0]),
-    clamp(difference[1], -cube_vals[1], cube_vals[1]),
-    clamp(difference[2], -cube_vals[2], cube_vals[2])
-  );
-  //Find the closest point on the cube (to the sphere) by adding the clamped vector to the center of the cube
-  let closest = cube.position.plus(clamped);
-  //Create a vector from that closest point to the center of the sphere
-  difference = closest.minus(sphere.position);
-
-  let length = Math.sqrt(
-    difference[0] ** 2 + difference[1] ** 2 + difference[2] ** 2
-  ); //TODO: double check how to get length of a vec just using tinygraphics
-  //If the distance from the closest point to the center is less than the sphere's radius, it must be inside the sphere
-  return Boolean(length < sphere.radius);
-}
-
-function CheckCollisionRaySphere(ray, ray_origin, sphere) {
-  let L = ray_origin.minus(sphere.position);
-  //console.log(L);
-  let b = ray.dot(L);
-  //console.log(b);
-  let c = L.dot(L) - sphere.radius2;
-  //console.log(c);
-  let t = b * b - c;
-  //console.log(t);
-  if (t < 0) return false;
-
-  return true;
-}
-
-/* This function checks if their is a collision between an inputted ray and plane. If there is a collision, it returns the position where the ray will hit the plane.
-You need to pass in a ray direction (ray), ray origin, normal to the plane, and d value  you wish to check for collision with  
-Note: d is the d from the plane equation*/
-function CheckCollisionRayPlane(ray, ray_origin, n, d) {
-  let denom = ray.dot(n);
-
-  if (Math.abs(denom) <= 0.0001)
-    //checking if denom will be close to 0
-    return null;
-  let t = -(ray_origin.dot(n) + d) / denom;
-
-  if (t < 0) return null;
-
-  return ray_origin.plus(ray.times(t)); //This will be a 3-coord vector
-}
 
 export class FinalProject extends Scene {
   constructor() {
@@ -209,7 +61,7 @@ export class FinalProject extends Scene {
       dart_metal: new Material(new defs.Textured_Phong(), {
         ambient: 0.5,
         diffusivity: 0,
-        specularity: 90,
+        specularity: 10,
         smoothness: 10,
         texture: new Texture(
           "assets/Dart Models and Textures/dart_resized.obj/Texture_9.png"
@@ -252,7 +104,8 @@ export class FinalProject extends Scene {
         specularity: 1,
       }),
     };
-    this.collision_cubes = {
+    //Note: All height/width/depth vals are half of the real height/width/depth, similar to a radius
+    this.collision_cubes = { //Named collision objects
       floor: {
         position: vec3(-3, -20, 0),
         width: 40, // x
@@ -262,12 +115,13 @@ export class FinalProject extends Scene {
       },
       wall: {
         position: vec3(-3, 9, -21),
-        width: 40, //x
-        height: 30, //y
+        width: 100, //x //x and y for wall just set to large values for now 
+        height: 100, //y
         depth: 1, // z
         normal: vec3(0, 0, 1),
       },
-      bounding_box: {
+      //This bounding box is just for visualizing/debugging dart collision, not used in actual scene 
+      bounding_box: { 
         og_position: vec(null, null, null),
         position: vec3(null, null, null),
         width: 0.15, //x
@@ -280,10 +134,11 @@ export class FinalProject extends Scene {
         twist_angle: 0,
       },
     };
+
     this.misc_cubes = []; //these are all cubes or rectangular bounding boxes that never need to be referred to by name -- filled in first frame
     this.balloons = []; //all balloons will be filled in here
-    this.objects = {
-      //Note: All height/width/depth vals are half of the real height/width/depth, similar to a radius
+    this.darts = [];
+    /* Structure of a Dart in darts:
       dart: {
         og_position: vec3(null, null, null),
         position: vec3(null, null, null),
@@ -296,7 +151,8 @@ export class FinalProject extends Scene {
         side_angle: 0,
         twist_angle: 0,
       },
-
+      */
+    this.objects = {
       crosshair: {
         position: vec3(0, 2, 0),
         height: 1.5, //x
@@ -327,19 +183,18 @@ export class FinalProject extends Scene {
     this.fire_dart = false;
     this.dart_ray = null;
     this.dart_ready = true;
-    this.drawing_dart = false;
     this.dart_wall_point = null;
     //Travel time and dart origin should be adjusted at same time to make sure they make sense, ex. putting dart_origin super far and travel time super low will make the velocity way too high
     this.travel_time = 1.5; //number of seconds a dart should take to travel to wall, adjust to see different speeds
-    this.dart_origin = vec3(0, 2, 0); //location where the dart begins its flight path //TODO: figure out why z not being 0 breaks dart flight path
+    this.dart_origin = vec3(0, 2, 20); //location where the dart begins its flight path 
     this.darts_thrown = 0;
     this.max_darts = 5;
 
     /*Misc*/
-    this.sim_start_time = null;
     this.score = 0;
     this.first_frame = true;
   }
+
   add_mouse_controls(canvas) {
     // add_mouse_controls():  Attach HTML mouse events to the drawing canvas.
     //note that y vals on from_center are inverted
@@ -357,7 +212,7 @@ export class FinalProject extends Scene {
         this.mouse_click && this.obj_picked ? mouse_position(e) : undefined;
     });
     canvas.addEventListener("mousedown", (e) => {
-      this.follow_mouse = false;
+      //this.follow_mouse = false; //uncomment if crosshair should be put down on click
       this.obj_picked = false;
       this.mouse_click = !this.mouse_click;
       this.fire_dart = this.dart_ready ? true : false;
@@ -390,6 +245,12 @@ export class FinalProject extends Scene {
       box.textContent = "Darts Left: " + (this.max_darts - this.darts_thrown);
     });
     this.new_line();
+    this.live_string((box) => {
+      if (this.max_darts > this.darts_thrown)
+        box.textContent = "" ;
+      else
+        box.textContent = "Out of darts!" ;
+    });
   }
 
   /*Calculations*/
@@ -417,6 +278,7 @@ export class FinalProject extends Scene {
     ray_world.normalize();
     return ray_world;
   }
+
   /*Return whether there was a collision between a given object and all other objects in the scene*/
   check_all_collisions(object) {
     let collision = false;
@@ -438,16 +300,18 @@ export class FinalProject extends Scene {
   /*Checks whether given object collides with any balloons, pops those balloons=*/
   perform_dart_balloon_collisions(object) {
     for (var i = 0; i < this.balloons.length; i++) {
-      console.log("baloon:", this.balloons[i]);
+      //console.log("balloon:", this.balloons[i]);
       if (CheckCollisionCubeCube(this.balloons[i], object)) {
         this.balloons[i].popped = true;
-        console.log("balloon pop!");
+        this.score += this.balloons[i].points;
+        this.balloons[i].points =0; //set points to 0 after it's first added so it won't get re-added every frame a collision is detected
+        //console.log("balloon pop!");
       }
     }
   }
 
   /* Returns the transformation matrix to show the inputted object as a projectile */
-  calc_projectile_object(object, context, program_state, model_transform, t) {
+  calc_projectile_object(object, model_transform, t) {
     //t=0; //Uncomment this to make object freeze, for debugging
     let v = object.velocity;
 
@@ -489,7 +353,7 @@ export class FinalProject extends Scene {
     let collision_check = this.check_all_collisions(object);
 
     if (collision_check) {
-      console.log("Collision pos: ", object.position);
+     // console.log("Collision pos: ", object.position);
       //If there was a collision, just set dart to previous position
       model_transform = model_transform
         .times(Mat4.translation(old_pos[0], old_pos[1], old_pos[2]))
@@ -500,6 +364,9 @@ export class FinalProject extends Scene {
       object.position = old_pos;
       object.og_position = old_pos;
       object.stuck = true; //Making dart not move once it collides with something - will prob adjust based on collision with balloon vs wall
+	    if (this.darts_thrown < this.max_darts){
+        this.dart_ready = true; //new dart ready whenever a dart sticks, unless they've thrown max darts
+      }
     } else {
       //If no collision, place object  in next pos
       model_transform = model_transform
@@ -515,10 +382,10 @@ export class FinalProject extends Scene {
     return model_transform;
   }
 
-  /*Drawing Objects*/
+  /*Drawing Functions*/
   draw_crosshair(context, program_state, model_transform, t) {
     //Controls how object (crosshair) follows the mouse
-    if (this.follow_mouse) {
+    if (this.follow_mouse && !this.fire_dart) {
       //Similar to checking for collision, casts a ray from mouse location and converts to world coords
       let ray_world = this.mouse_to_world_coords(program_state);
       let ray_origin = this.eye_location;
@@ -540,11 +407,11 @@ export class FinalProject extends Scene {
         this.obj_picked_pos = new_pos;
         this.objects.crosshair.position = new_pos;
       }
-    } else if (this.fire_dart) {
-      console.log("Fire dart");
+    } else if (this.fire_dart) { //Initialize next dart's velocity and position for calculating projectile motion
+      //console.log("Fire dart");
       this.fire_dart = false;
       this.dart_ready = false;
-      this.darts_thrown = 1;
+      
       //TODO: Right now we only check for where it will hit the wall, should adjust this to check if the ray is in the direction of the wall or the floor, then check for floor plane collision if needed
       this.dart_ray = this.mouse_to_world_coords(program_state);
       let ray_origin = this.eye_location;
@@ -572,50 +439,52 @@ export class FinalProject extends Scene {
       let y_pos_begin = this.dart_origin[1];
 
       /*Calculate needed velocity to reach point on the wall based on original dart position */
-      this.objects.dart.velocity[0] =
+      this.darts[this.darts_thrown].velocity[0] =
         (this.dart_wall_point[0] - x_pos_begin) / final_time;
-      this.objects.dart.velocity[1] =
+      this.darts[this.darts_thrown].velocity[1] =
         (this.dart_wall_point[1] - y_pos_begin + 0.5 * 9.8 * final_time ** 2) /
         final_time;
-      this.objects.dart.velocity[2] =
+      this.darts[this.darts_thrown].velocity[2] =
         (this.dart_wall_point[2] - z_pos_begin) / final_time;
-
-      this.objects.dart.og_position = vec3(
+      
+      this.darts[this.darts_thrown].og_position = vec3( //set up position for next dart
         x_pos_begin,
         y_pos_begin,
         z_pos_begin
       );
 
+      //bounding box position & velocity, for debugging
       this.collision_cubes.bounding_box.og_position =
-        this.objects.dart.og_position; //bounding box position, for debugging
-      this.collision_cubes.bounding_box.velocity = this.objects.dart.velocity;
+        this.darts[this.darts_thrown].og_position; 
+      this.collision_cubes.bounding_box.velocity = this.darts[this.darts_thrown].velocity;
 
-      this.drawing_dart = true;
-      this.sim_start_time = t;
+      this.darts[this.darts_thrown].drawing_this_dart = true;
+      this.darts[this.darts_thrown].sim_start_time = t;
+      this.darts_thrown += 1;
     }
 
     /*If not already following the mouse: If they click, check if they are on top of crosshair, pick up crosshair if yes*/
     //Note: This is for picking back up the crosshair, which prob will be eliminated in final product, might be useful for something else
-    /*
-        else if (this.mouse_click){
-            console.log("mouse click");
-            //mouse coords are in viewport space, so convert them
-            //default canvas/viewport is 1080w by 600h - divide by 2
-            this.mouse_old_pos = this.mouse.anchor;
+    
+        // else if (this.mouse_click){
+        //     //console.log("mouse click");
+        //     //mouse coords are in viewport space, so convert them
+        //     //default canvas/viewport is 1080w by 600h - divide by 2
+        //     this.mouse_old_pos = this.mouse.anchor;
             
-            let ray_world = this.mouse_to_world_coords(program_state);
-           //origin of ray is position of camera
-           let ray_origin = this.eye_location;//check if there's a better way to get this dynamically
+        //     let ray_world = this.mouse_to_world_coords(program_state);
+        //    //origin of ray is position of camera
+        //    let ray_origin = this.eye_location;//check if there's a better way to get this dynamically
            
-           if(CheckCollisionRaySphere( ray_world,ray_origin, this.objects.crosshair)){
-                this.obj_picked =true;
+        //    if(CheckCollisionRaySphere( ray_world,ray_origin, this.objects.crosshair)){
+        //         this.obj_picked =true;
                 
-           }
+        //    }
            
-        }
-        */
+        // }
+        
 
-    //Move the object to correct position
+    //Move the crosshair to correct position to follow mouse
     model_transform = model_transform.times(
       Mat4.translation(
         this.objects.crosshair.position[0],
@@ -623,20 +492,17 @@ export class FinalProject extends Scene {
         this.objects.crosshair.position[2]
       )
     );
-
-    this.shapes.crosshair.draw(
-      context,
-      program_state,
-      model_transform,
-      this.materials.crosshair
-    );
+    if (this.dart_ready){ //Only draw the crosshair when a dart can be thrown
+      this.shapes.crosshair.draw(context, program_state, model_transform, this.materials.crosshair);
+    } 
   }
-  draw_background(context, program_state, t) {
+  
+  /*Nafas' background drawing, with loops to add models to misc_cubes array for collision*/
+  draw_background(context, program_state, t) { 
     // Scaling factor
     let scale_factor = 3.8;
 
     // Box
-
     //on the first render, add all boxes to our array of misc_cubes - this array makes collision detection simpler
     if (this.first_frame) {
       let positions = [];
@@ -644,29 +510,19 @@ export class FinalProject extends Scene {
 
       //Back
       positions.push(vec3(0, 2, -19));
-      sizes.push(
-        vec3(8 * scale_factor, 5 * scale_factor, 0.125 * scale_factor)
-      );
+      sizes.push( vec3(8 * scale_factor, 5 * scale_factor, 0.125 * scale_factor));
       //Top
       positions.push(vec3(0, 5 * scale_factor + 2, 0.375 * scale_factor - 19));
-      sizes.push(
-        vec3(8.125 * scale_factor, 0.125 * scale_factor, 0.5 * scale_factor)
-      );
+      sizes.push(vec3(8.125 * scale_factor, 0.125 * scale_factor, 0.5 * scale_factor));
       //Bottom
       positions.push(vec3(0, -5 * scale_factor + 2, 0.375 * scale_factor - 19));
-      sizes.push(
-        vec3(-8.125 * scale_factor, 0.375 * scale_factor, 0.5 * scale_factor)
-      );
+      sizes.push(vec3(-8.125 * scale_factor, 0.375 * scale_factor, 0.5 * scale_factor));
       //Left
       positions.push(vec3(-8 * scale_factor, 2, 0.375 * scale_factor - 19));
-      sizes.push(
-        vec3(0.125 * scale_factor, 5 * scale_factor, 0.5 * scale_factor)
-      );
+      sizes.push(vec3(0.125 * scale_factor, 5 * scale_factor, 0.5 * scale_factor));
       //Right
       positions.push(vec3(8 * scale_factor, 2, 0.375 * scale_factor - 19));
-      sizes.push(
-        vec3(0.125 * scale_factor, 5 * scale_factor, 0.5 * scale_factor)
-      );
+      sizes.push(vec3(0.125 * scale_factor, 5 * scale_factor, 0.5 * scale_factor));
 
       for (var i = 0; i < 5; i++) {
         this.misc_cubes.push({
@@ -800,62 +656,73 @@ export class FinalProject extends Scene {
       );
     }
   }
-  draw_balloons(context, program_state, t) {
+
+  /* Madurya's balloon drawing, with loops to add balloons to this.balloons array for collision checking*/
+  draw_balloons(context, program_state, t) {  
     const model_transform = Mat4.identity().times(Mat4.scale(0.1, 0.1, 0.1));
 
     let shift_by = 5 * Math.sin(t * 3);
     let bob = 0;
-    //let bob = (Math.PI / 6) * Math.sin(3 * t);
+    //let bob = (Math.PI / 6) * Math.sin(3 * t); //not bobbing for right now 
     const scale_up = 13;
     const z_pos = -11;
 
-    if (this.first_frame) {
+
+	  /*Drawing balloons */
+	  //Note: Bound transforms are used to draw bounding boxes, during dev and debugging  
+
+	  /*Row 1, balloons 1-7*/
+    if (this.first_frame) { //if on first frame, define values for balloons in first row
       for (var i = -15; i < 20; i += 5) {
         this.balloons.push({
-          position: vec3(i * scale_up * 0.1, 4.25 * 34 * 0.1, -5 * 28 * 0.1),
+          position: vec3(i * scale_up * 0.1, 4.25 * 34 * 0.1, -5 * 28 * 0.1), //converting from scaled coords to world coords
           width: 28 * 0.1,
           height: 34 * 0.1,
           depth: 28 * 0.1,
           popped: false,
+          points: 10,
         });
       }
-      console.log(this.balloons);
+      //console.log(this.balloons);
     }
 
-    // row 1
-	//Note: The bounding boxes on row 1 are bigger than rows 2 and 3, we could make them smaller 
-    for (let i = -15; i < 20; i += 5) {
-      let balloon_transform = model_transform //.times(Mat4.translation(shift_by,0,0))
+    
+	      //Note: The bounding boxes on row 1 are bigger than rows 2 and 3, we could make them smaller 
+   
+	  for (let i = -15; i < 20; i += 5) {
+    //Loop to draw all balloons in Row 1, balloons 1-7
+    	let balloon_transform = model_transform //.times(Mat4.translation(shift_by,0,0))
         .times(Mat4.scale(scale_up, scale_up, scale_up))
         .times(Mat4.translation(i, 8, z_pos))
         .times(Mat4.rotation(bob, 0, 0, 1)); // rotate wrt z
-      let bound_transform = model_transform
 
+      	let color = null;
+      	if (Math.abs(i) == 15) color = "#fff700";
+      	else if (Math.abs(i) == 10) color = "#66ff00";
+      	else if (Math.abs(i) == 5) color = "#ff7700";
+      	else color = "#BC13FE";
+
+      	if (!this.balloons[3 + i / 5].popped){
+        //if this balloon isn't popped, draw it
+       		this.shapes.balloon.draw(
+          	context,
+          	program_state,
+          	balloon_transform,
+          	this.materials.balloon.override({ color: hex_color(color) })
+        	);
+		}
+
+		let bound_transform = model_transform
         .times(Mat4.translation(i * scale_up, 4.25 * 34, -5 * 28))
         .times(Mat4.scale(28, 34, 28));
 
       //this.shapes.bounding_box.draw(context, program_state, bound_transform, this.materials.white, 'LINES');
-
-      let color = null;
-      if (Math.abs(i) == 15) color = "#fff700";
-      else if (Math.abs(i) == 10) color = "#66ff00";
-      else if (Math.abs(i) == 5) color = "#ff7700";
-      else color = "#BC13FE";
-
-      if (!this.balloons[3 + i / 5].popped)
-        //if this balloon isn't popped, draw it
-        this.shapes.balloon.draw(
-          context,
-          program_state,
-          balloon_transform,
-          this.materials.balloon.override({ color: hex_color(color) })
-        );
     }
 
-    //row 2, 8th and 9th balloon
-    let x_pos = 13 * (0.5 * Math.sin(5 * t)) + 2; // oscillates between 0 and 1
-    //let x_pos = 0;
-    if (this.first_frame) {
+    /*row 2, 8th and 9th balloon*/
+    let x_offset = 13 * (0.5 * Math.sin(5 * t)) + 2; // oscillates between 0 and 1, renamed from bump to x_offset
+    
+    if (this.first_frame) { //Initialize two balloons that will be updated when their positions change
       for (var i = 0; i < 2; i++) {
         this.balloons.push({
           position: vec3(null, null, null),
@@ -863,13 +730,14 @@ export class FinalProject extends Scene {
           height: 30 * 0.1,
           depth: 24 * 0.1,
           popped: false,
+          points: 30,
         });
       }
     }
-
+    //balloon 8
     const model_transform_4 = model_transform
       .times(Mat4.scale(scale_up, scale_up, scale_up))
-      .times(Mat4.translation(x_pos, 0, z_pos))
+      .times(Mat4.translation(x_offset, 0, z_pos))
       .times(Mat4.translation(7, 0, 0));
     if (!this.balloons[7].popped)
       this.shapes.balloon.draw(
@@ -881,21 +749,21 @@ export class FinalProject extends Scene {
 
     let bound_transform = model_transform
       .times(Mat4.scale(24, 30, 24))
-      .times(Mat4.translation(x_pos / 1.9, 1.4, -5.9))
+      .times(Mat4.translation(x_offset / 1.9, 1.4, -5.9))
       .times(Mat4.translation(3.8, 0, 0));
 
     this.balloons[7].position = vec3(
-      (x_pos / 1.9 + 3.8) * 24 * 0.1,
+      (x_offset / 1.9 + 3.8) * 24 * 0.1, //converting from scaled coords of the bounding box to world coords
       1.4 * 30 * 0.1,
       -5.9 * 24 * 0.1
     );
-    //console.log(this.balloons[7].position);
 
     //this.shapes.bounding_box.draw(context, program_state, bound_transform, this.materials.white, 'LINES');
 
+    //balloon 9
     const model_transform_5 = model_transform
       .times(Mat4.scale(scale_up, scale_up, scale_up))
-      .times(Mat4.translation(-x_pos, 0, z_pos))
+      .times(Mat4.translation(-x_offset, 0, z_pos))
       .times(Mat4.translation(-7, 0, 0));
 
     if (!this.balloons[8].popped)
@@ -905,19 +773,20 @@ export class FinalProject extends Scene {
         model_transform_5,
         this.materials.balloon.override({ color: hex_color("#2AAA8A") })
       );
-
+      
     bound_transform = model_transform
       .times(Mat4.scale(24, 30, 24))
-      .times(Mat4.translation(-x_pos / 1.9, 1.4, -5.9)) //these numbers are from trial and error to align boxes with balloons
+      .times(Mat4.translation(-x_offset / 1.9, 1.4, -5.9)) //these numbers are from trial and error to align boxes with balloons
       .times(Mat4.translation(-3.8, 0, 0));
+
     this.balloons[8].position = vec3(
-      (-x_pos / 1.9 - 3.8) * 24 * 0.1,
+      (-x_offset / 1.9 - 3.8) * 24 * 0.1, //converting from these scaled coords of the bounding box to world coords 
       1.4 * 30 * 0.1,
       -5.9 * 24 * 0.1
     );
     //this.shapes.bounding_box.draw(context, program_state, bound_transform, this.materials.white, 'LINES');
 
-    //row 3
+    //row 3, 10th balloon 
     let shift_by_faster = 15 * Math.sin(t * 5);
 
     if (this.first_frame) {
@@ -927,6 +796,7 @@ export class FinalProject extends Scene {
         height: 30 * 0.1,
         depth: 24 * 0.1,
         popped: false,
+        points: 100,
       });
     }
 
@@ -941,20 +811,22 @@ export class FinalProject extends Scene {
         model_transform_7,
         this.materials.balloon.override({ color: hex_color("#0096FF") })
       );
-
-	bound_transform = model_transform
-    .times(Mat4.scale(24, 30, 24))
-    .times(Mat4.translation(shift_by_faster / 1.85, -2.9, -5.9));
-    //this.shapes.bounding_box.draw(context,program_state,bound_transform,this.materials.white,"LINES");
-    this.balloons[9].position = vec3(
-      (shift_by_faster / 1.85) * 24 * 0.1,
+      
+	  bound_transform = model_transform
+      .times(Mat4.scale(24, 30, 24))
+      .times(Mat4.translation(shift_by_faster / 1.85, -2.9, -5.9));
+    
+      this.balloons[9].position = vec3(
+      (shift_by_faster / 1.85) * 24 * 0.1, //converting from scaled coords of the bounding box to world coords
       -2.9 * 30 * 0.1,
       -5.9 * 24 * 0.1
     );
+	  //this.shapes.bounding_box.draw(context,program_state,bound_transform,this.materials.white,"LINES");
   }
 
+  /*Drawing an arbitrary floor
+  Note: Not drawn currently */
   draw_floor(context, program_state, model_transform) {
-    //Drawing an arbitrary floor
     model_transform = model_transform
       .times(Mat4.translation(-3, -20, 0))
       .times(Mat4.scale(40, 1, 20));
@@ -966,8 +838,8 @@ export class FinalProject extends Scene {
     );
   }
 
+  /*Drawing a wall behind box for wall collision*/
   draw_wall(context, program_state, model_transform) {
-    //Drawing an arbitrary wall
     model_transform = model_transform
       .times(Mat4.translation(-3, 9, -21))
       .times(Mat4.scale(40, 30, 1));
@@ -979,42 +851,41 @@ export class FinalProject extends Scene {
     );
   }
 
-  draw_dart(context, program_state, model_transform, t) {
-    if (this.drawing_dart) {
-      let current_time = t - this.sim_start_time;
+  /*Loops through this.darts to draw darts that have been thrown*/
+  draw_darts(context, program_state, model_transform, t) {
+    for (var i=0; i<this.max_darts;i++){
+      if (this.darts[i].drawing_this_dart) {
+        let current_time = t - this.darts[i].sim_start_time;
 
-      let projectile_transform = this.calc_projectile_object(
-        this.objects.dart,
-        context,
-        program_state,
-        model_transform,
-        current_time
-      );
-      projectile_transform = projectile_transform
-        .times(Mat4.translation(0, 0, 5.64)) //Note: This 5.64 val was just trial and error to get the dart to line up with the bounding box
-        .times(Mat4.scale(3, 3, 3))
+        let projectile_transform = this.calc_projectile_object(
+          this.darts[i],
+          model_transform,
+          current_time
+        );
+        projectile_transform = projectile_transform
+          .times(Mat4.translation(0, 0, 5.64)) //Note: This 5.64 val was just trial and error to get the dart to line up with the bounding box
+          .times(Mat4.scale(3, 3, 3))
 
-        .times(Mat4.rotation(Math.PI / 2, 0, 1, 0));
+          .times(Mat4.rotation(Math.PI / 2, 0, 1, 0));
 
-      this.shapes.dart.draw(
-        context,
-        program_state,
-        projectile_transform,
-        this.materials.dart_metal
-      );
+        this.shapes.dart.draw(
+          context,
+          program_state,
+          projectile_transform,
+          this.materials.dart_metal
+        );
 
-      if (!this.objects.dart.stuck)
-        //don't check balloon collisions if the dart is stuck in wall
-        this.perform_dart_balloon_collisions(this.objects.dart);
-      //this.draw_dart_coll_box(context,program_state, model_transform,current_time); //for debugging
+        if (!this.darts[i].stuck) //don't check balloon collisions if the dart is stuck in wall
+          this.perform_dart_balloon_collisions(this.darts[i]);
+        //this.draw_dart_coll_box(context,program_state, model_transform,current_time); //for debugging
+      }
     }
   }
 
+  /*Draws the collision box for a dart, for debugging; currently not called; also not adapted for multiple darts */
   draw_dart_coll_box(context, program_state, model_transform, t) {
     let coll_transform = this.calc_projectile_object(
       this.collision_cubes.bounding_box,
-      context,
-      program_state,
       model_transform,
       t
     );
@@ -1074,79 +945,47 @@ This also means there's typically a little bit of space between the wall and the
     const t = program_state.animation_time / 1000,
       dt = program_state.animation_delta_time / 1000;
 
+      
     let model_transform = Mat4.identity();
 
     /*Drawing*/
     this.draw_background(context, program_state, model_transform, t);
-    this.draw_balloons(context, program_state, t);
+     this.draw_balloons(context, program_state, t);
     //this.draw_floor(context, program_state, model_transform);
     this.draw_wall(context, program_state, model_transform);
-    this.draw_crosshair(context, program_state, model_transform, t);
-    this.draw_dart(context, program_state, model_transform, t);
-    if (this.first_frame) this.first_frame = false;
+    
+    
+    /*Set up array of darts*/
+    if (this.first_frame) 
+    {
+      for (var i=0; i<this.max_darts;i++){
+        this.darts.push({
+          og_position: vec3(null, null, null),
+          position: vec3(null, null, null),
+          width: 0.15, //x
+          height: 0.15, //y
+          depth: 0.9, //z
+          velocity: vec3(null, null, null), //defined by dart end location
+          stuck: false,
+          up_angle: 0,
+          side_angle: 0,
+          twist_angle: 0,
+          drawing_this_dart: false,
+          sim_start_time: null,
+
+        });
+      }
+      this.first_frame = false;
+    }
+
+    //Draw crosshair, only when they still can throw darts
+    if (this.darts_thrown < this.max_darts) 
+      this.draw_crosshair(context, program_state, model_transform, t);
+    
+    //Draw the darts that have been thrown
+    this.draw_darts(context, program_state, model_transform, t);
+
   }
+  
 }
 
-/*This is the old version of projectile motion that  models the dart as a sphere for collisions (originally object model was just a ball)
-In the new version,  all object collisions are modelled with rectangular bounding boxes.
-Keeping the old one might be useful once we switch to collisions w/ the balloons 
--- balloon collision could probably be modeled as bounding sphere and a bounding box
-*/
-/*
-calc_projectile_object(object, context, program_state,model_transform, t){
-    //t=0; //Comment this out to make object move
-    let v = object.velocity;
-    if(object.stuck)
-     t = 0;
-    //Basic Projectile motion
-    let og_pos = object.og_position;
-    let x_pos = og_pos[0] + v[0]*t;
-    let y_pos = og_pos[1] + v[1]*t - (.5*9.8*(t**2));
-    let z_pos = 0;
-
-    //Set an old and new position so we can check for collisions with the new position
-    let old_pos = object.position;
-    object.position = vec3(x_pos,y_pos,z_pos);
-
-    //Angle of dart 
-    let old_angle = object.angle;
-    //console.log("Old angle:", old_angle);
-    let x_deriv = v[0];
-    let y_deriv = v[1] - 9.8*t;
-    let angle = object.stuck ? old_angle : Math.atan(y_deriv/x_deriv);
-     //model_transform = model_transform.times(Mat4.rotation(angle,0,0,1));
-    //TODO: Check if theres a better way to organize/perform all collisions
-    let collisionWall = Boolean(CheckCollisionCubeSphere(this.collision_cubes.wall, object));
-    let collisionFloor = Boolean(CheckCollisionCubeSphere(this.collision_cubes.floor, object));
-
-    if ( collisionWall|| collisionFloor){
-        //If there was a collision, just set ball to previous position - in our project, balloon would probably disappear and dart might too 
-        //console.log(this.objects.ball.position)
-        //console.log("Collision!"); //for debugging
-        model_transform = model_transform
-        .times(Mat4.translation(old_pos[0],old_pos[1],old_pos[2]))
-        .times(Mat4.rotation(old_angle,0,0,1));
-        //TODO: fix angling cus for some reason it reverts to 45 deg angle 
-        //this.objects.ball.angle = old_angle;
-        object.position = old_pos;
-        object.og_position = old_pos;
-        object.stuck = true; //Making ball not move once it collides with something - arbitrary behavior
-        
-    }
-    else{
-        //If no collision, place ball in next pos
-        model_transform = model_transform
-        .times(Mat4.translation(x_pos,y_pos,z_pos))
-        .times(Mat4.rotation(angle,0,0,1));
-        object.angle = angle;
-        
-    ;
-    }
-    
-    model_transform = model_transform.times(Mat4.scale(2.5,2.5,2.5));
-    
-   //Should output a model transform to draw your object
-    //this.shapes.dart.draw(context,program_state,model_transform,this.materials.test);
-    return model_transform; 
-}
-*/
