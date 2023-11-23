@@ -8,6 +8,8 @@ import {Surfaces_Demo} from "./examples/surfaces-demo.js"
 import {Text_Demo} from "./examples/text-demo.js"
 import {Transforms_Sandbox} from "./examples/transforms-sandbox.js"
 import {FinalProject} from "./final-project.js";
+//import {RenderObjsMtls} from "./render-objs-mtls.js";
+import {Prizes} from "./prizes.js";
 
 // Pull these names into this module's scope for convenience:
 const {
@@ -34,8 +36,8 @@ Object.assign(defs,
     {Surfaces_Demo},
     {Text_Demo},
     {Transforms_Sandbox},
-    {FinalProject}, 
-    
+    {FinalProject},
+    {Prizes},
 );
 
 // ******************** End extra step
@@ -43,7 +45,7 @@ Object.assign(defs,
 // (Can define Main_Scene's class here)
 
 
-const Main_Scene =FinalProject;
+const Main_Scene = Prizes;
 const Additional_Scenes = []; //Add Movement_Controls to the brackets if you want to easily move the camera around the screen during testing/development
 
 
