@@ -114,16 +114,41 @@ export class Prizes extends Scene {                           // **Balloons** sh
         super();
         // Load the model file:
         //this.shapes = {"teapot": new Shape_From_File("assets/teapot.obj")};
-        this.shapes = {"lucky": new defs.Capped_Cylinder(200, 50, [0, 1])};
+        this.shapes = {"coin": new defs.Capped_Cylinder(200, 50, [0, 1]),
+                        "shelf": new defs.Cube(),
+                        "comp_cube": new defs.Cube(),
+                        //"rabbit": new Shape_From_File("assets/rabbit.obj"),
+                        "globe": new defs.Subdivision_Sphere(4),
+                        "ice_cream": new defs.Closed_Cone(100, 100, [0.0, 1.0]),
+                        "cream": new defs.Subdivision_Sphere(4),
+        };
 
         // Don't create any DOM elements to control this scene:
         this.widget_options = {make_controls: false};
         // Non bump mapped:
-
-
-        this.luck = new Material(new defs.Textured_Phong(1), {
-            color: hex_color("#8B8000"),
-            ambient: .2, diffusivity: 1, specularity: .8, texture: new Texture("assets/money.png")});
+        this.materials = {
+            shelf:  new Material(new defs.Phong_Shader(1), {
+                color: hex_color("#8B0000"),
+                ambient: .2, diffusivity: 1, specularity: .8}),
+            coin: new Material(new defs.Textured_Phong(1), {
+                color: hex_color("#8B8000"),
+                ambient: .2, diffusivity: .8, texture: new Texture("assets/money.png")}),
+            comp_cube: new Material(new defs.Textured_Phong(1), {
+                color: hex_color("#000000"),
+                ambient: .4, diffusivity: .8, specularity: 1, texture: new Texture("assets/companion-cube.png")}),
+            rabbit: new Material(new defs.Phong_Shader(1), {
+                color: hex_color("#FFB6C1"),
+                ambient: .2, diffusivity: 1, specularity: .8}),
+            globe: new Material(new defs.Textured_Phong(1), {
+                color: hex_color("#000000"),
+                ambient: .4, diffusivity: .8, specularity: 1, texture: new Texture("assets/earth.gif")}),
+            ice_cream: new Material(new defs.Textured_Phong(1), {
+                color: hex_color("#5B3C1E"),
+                ambient: .4, diffusivity: 1, specularity: .2, texture: new Texture("assets/fixed_waffle.png")}),
+            cream: new Material(new defs.Textured_Phong(1), {
+                color: hex_color("#FFFDD0"),
+                ambient: .2, diffusivity: 1, specularity: .2, texture: new Texture("assets/ice.png")}),
+        }
 
     }
 
@@ -143,15 +168,69 @@ export class Prizes extends Scene {                           // **Balloons** sh
         const t = program_state.animation_time / 1000
 
         //for (let i of [-1, 1]) {                                       // Spin the 3D model shapes as well.
-        const model_transform = Mat4.identity().times(Mat4.translation(1, -1, 0))
+        const model_transform_coin = Mat4.identity().times(Mat4.translation(1.8, -.2, 0))
                                                 .times(Mat4.rotation(- Math.PI / 4, 0, 1, 0))
+                                                .times(Mat4.rotation(Math.PI/20, 0, 0, 1))
                                                 .times(Mat4.rotation(2 * Math.PI * t /3, 0, 1, 0))
                                                 //.times(Mat4.rotation(Math.PI / 8, 0, 0, 1))
                                                 .times(Mat4.scale(1, 1, .3))
                                                 .times(Mat4.scale(.3, .3, .3));//.times;
 
-        this.shapes.lucky.draw(context, program_state, model_transform, this.luck);
 
+
+        const model_transform_shelf_1 = Mat4.identity().times(Mat4.translation(0, .5, 0)).times(Mat4.scale(2.5, .07, 1));
+        const model_transform_shelf_2 = model_transform_shelf_1.times(Mat4.translation(0, -17, 0));
+
+        const model_transform_globe = Mat4.identity().times(Mat4.translation(-1.7, 0, 0))
+                                                        .times(Mat4.rotation(Math.PI/20, 0, 0, 1))
+                                                        .times(Mat4.rotation(2 * Math.PI * t /3, 0, 1, 0))
+                                                        .times(Mat4.scale(.5, .5, .5));
+
+
+        const model_transform_compCube = Mat4.identity().times(Mat4.translation(.6, -.15, .5))
+                                                        .times(Mat4.rotation(Math.PI/20, 0, 0, 1))
+                                                        .times(Mat4.rotation(2 * Math.PI * t /3, 0, 1, 0))
+                                                        .times(Mat4.scale(.3, .3, .3));
+
+        const model_transform_iceCream = Mat4.identity().times(Mat4.translation(-.5, -.35, 0))
+            .times(Mat4.rotation(Math.PI/20, 0, 0, 1))
+            .times(Mat4.rotation(2 * Math.PI * t /3, 0, 1, 0))
+            .times(Mat4.rotation(Math.PI/2, 1, 0, 0))
+            .times(Mat4.scale(.25, .25, .25));
+                        ;
+
+        const model_transform_cream = Mat4.identity().times(Mat4.translation(-.56, .04, 0))
+                                                        .times(Mat4.rotation(Math.PI/20, 0, 0, 1))
+                                                        .times(Mat4.rotation(2 * Math.PI * t /3, 0, 1, 0))
+                                                        .times(Mat4.rotation(Math.PI/2, 1, 0, 0))
+                                                        .times(Mat4.scale(.27, .27, .27));
+
+        const model_transform_cream2 =
+        Mat4.identity()
+            .times(Mat4.translation(.77, .2, 0))
+            .times(Mat4.translation(-1.36, .04, 0))
+            .times(Mat4.rotation(Math.PI/20, 0, 0, 1))
+            .times(Mat4.rotation(2 * Math.PI * t /3, 0, 1, 0))
+            .times(Mat4.rotation(Math.PI/2, 1, 0, 0))
+            .times(Mat4.scale(.8, .8, .8))
+            .times(Mat4.scale(.27, .27, .27));
+        /*const model_transform_rabbit = Mat4.identity().times(Mat4.translation(0, -.6, 0))
+                                                        .times(Mat4.scale(.5, .5, .5));*/
+        //this.shapes.rabbit.draw(context, program_state, model_transform_rabbit, this.materials.rabbit);
+
+
+        this.shapes.coin.draw(context, program_state, model_transform_coin, this.materials.coin);
+
+        //this.shapes.shelf.draw(context, program_state, model_transform_shelf_1, this.materials.shelf);
+        this.shapes.shelf.draw(context, program_state, model_transform_shelf_2, this.materials.shelf);
+
+        this.shapes.comp_cube.draw(context, program_state, model_transform_compCube, this.materials.comp_cube);
+        this.shapes.comp_cube.draw(context, program_state, model_transform_compCube, this.materials.comp_cube);
+
+        this.shapes.globe.draw(context, program_state, model_transform_globe, this.materials.globe);
+        this.shapes.ice_cream.draw(context, program_state, model_transform_iceCream, this.materials.ice_cream)
+        this.shapes.cream.draw(context, program_state, model_transform_cream, this.materials.cream)
+        this.shapes.cream.draw(context, program_state, model_transform_cream2, this.materials.cream)
 
     }
     /*

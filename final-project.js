@@ -97,7 +97,7 @@ export class FinalProject extends Scene {
         specularity: 0.5,
         color: hex_color("#660011"),
       }),
-      balloon: new Material(new defs.Textured_Phong(1), {
+      balloon: new Material(new defs.Phong_Shader(1), {
         color: hex_color("#BC13FE"),
         ambient: 0.2,
         diffusivity: 1,
@@ -251,6 +251,8 @@ export class FinalProject extends Scene {
       else
         box.textContent = "Out of darts!" ;
     });
+    this.new_line();
+    this.key_triggered_button("go up", ["Control", "u"], () => this.attached = () => this.go_up);
   }
 
   /*Calculations*/
@@ -985,6 +987,13 @@ This also means there's typically a little bit of space between the wall and the
     //Draw the darts that have been thrown
     this.draw_darts(context, program_state, model_transform, t);
 
+    //move camera
+    this.go_up = Mat4.inverse(this.initial_camera_location.times(Mat4.translation(0, 50, 0)));
+
+    if (this.attached != undefined) {
+      program_state.set_camera(this.attached().map((x,i) =>
+          Vector.from(program_state.camera_inverse[i]).mix(x, 0.1)))
+    }
   }
   
 }
