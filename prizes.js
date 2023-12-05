@@ -1,5 +1,7 @@
 import {defs, tiny} from './examples/common.js';
 // Pull these names into this module's scope for convenience:
+import {Text_Line} from "./examples/text-demo.js";
+
 const {vec3, vec4, vec, color, hex_color, Mat4, Light, Shape, Material, Shader, Texture, Scene} = tiny;
 
 export class Shape_From_File extends Shape {                                   // **Shape_From_File** is a versatile standalone Shape that imports
@@ -121,6 +123,8 @@ export class Prizes extends Scene {                           // **Balloons** sh
                         "globe": new defs.Subdivision_Sphere(4),
                         "ice_cream": new defs.Closed_Cone(100, 100, [0.0, 1.0]),
                         "cream": new defs.Subdivision_Sphere(4),
+                        "button": new defs.Square(),
+                        "text": new Text_Line(35),
         };
 
         // Don't create any DOM elements to control this scene:
@@ -148,7 +152,15 @@ export class Prizes extends Scene {                           // **Balloons** sh
             cream: new Material(new defs.Textured_Phong(1), {
                 color: hex_color("#FFFDD0"),
                 ambient: .2, diffusivity: 1, specularity: .2, texture: new Texture("assets/ice.png")}),
+            button: new Material(new defs.Phong_Shader(1), {
+                color: hex_color("#051650"),
+                ambient: .2, diffusivity: 1, specularity: .8}),
         }
+
+        this.text_image = new Material(new defs.Textured_Phong(1), {
+            ambient: 1, diffusivity: 0, specularity: 0,
+            texture: new Texture("assets/text.png")
+        });
 
     }
 
@@ -218,6 +230,55 @@ export class Prizes extends Scene {                           // **Balloons** sh
                                                         .times(Mat4.scale(.5, .5, .5));*/
         //this.shapes.rabbit.draw(context, program_state, model_transform_rabbit, this.materials.rabbit);
 
+        const button1 = Mat4.identity()
+            .times(Mat4.translation(-1.7, -1, .9))
+            .times(Mat4.scale(.4, .2, 1))
+        ;
+
+        const button2 = Mat4.identity()
+            .times(Mat4.translation(-.6, -1, .9))
+            .times(Mat4.scale(.4, .2, 1))
+        ;
+        const button3 = Mat4.identity()
+            .times(Mat4.translation(.6, -1, .9))
+            .times(Mat4.scale(.4, .2, 1))
+        ;
+        const button4 = Mat4.identity()
+            .times(Mat4.translation(1.8, -1, .9))
+            .times(Mat4.scale(.4, .2, 1))
+        ;
+
+
+
+
+        const text1_transform = Mat4.identity().times(Mat4.translation(-1.9, 1, .5))
+            .times(Mat4.scale(.17, .17, .17));
+
+        const button1_price = Mat4.identity().times(Mat4.translation(-1.9, -1.08, .99))
+            .times(Mat4.scale(.05, .05, .05));
+        const button1_title = Mat4.identity().times(Mat4.translation(-1.97, -.9, .99))
+            .times(Mat4.scale(.06, .06, .06));
+
+        const button2_price = Mat4.identity().times(Mat4.translation(-.81, -1.08, .99))
+            .times(Mat4.scale(.05, .05, .05));
+        const button2_title = Mat4.identity().times(Mat4.translation(-.92, -.9, .99))
+            .times(Mat4.scale(.055, .05, .05));
+
+        const button3_price = Mat4.identity().times(Mat4.translation(.35, -1.08, .99))
+            .times(Mat4.scale(.05, .05, .05));
+        const button3_title = Mat4.identity().times(Mat4.translation(.26, -.9, .99))
+            .times(Mat4.scale(.055, .05, .05));
+
+        const button4_price = Mat4.identity().times(Mat4.translation(1.57, -1.08, .99))
+            .times(Mat4.scale(.05, .05, .05));
+        const button4_title = Mat4.identity().times(Mat4.translation(1.43, -.9, .99))
+            .times(Mat4.scale(.055, .05, .05));
+
+
+        this.shapes.text.set_string("PRIZES AVAILABLE:", context.context);
+        this.shapes.text.draw(context, program_state, text1_transform, this.text_image);
+
+
 
         this.shapes.coin.draw(context, program_state, model_transform_coin, this.materials.coin);
 
@@ -231,6 +292,32 @@ export class Prizes extends Scene {                           // **Balloons** sh
         this.shapes.ice_cream.draw(context, program_state, model_transform_iceCream, this.materials.ice_cream)
         this.shapes.cream.draw(context, program_state, model_transform_cream, this.materials.cream)
         this.shapes.cream.draw(context, program_state, model_transform_cream2, this.materials.cream)
+
+        this.shapes.button.draw(context, program_state, button1, this.materials.button)
+        this.shapes.text.set_string("260 PTS", context.context);
+        this.shapes.text.draw(context, program_state, button1_price, this.text_image);
+        this.shapes.text.set_string("A4 Globe", context.context);
+        this.shapes.text.draw(context, program_state, button1_title, this.text_image);
+
+
+        this.shapes.button.draw(context, program_state, button2, this.materials.button)
+        this.shapes.text.set_string("200 PTS", context.context);
+        this.shapes.text.draw(context, program_state, button2_price, this.text_image);
+        this.shapes.text.set_string("Ice Cream", context.context);
+        this.shapes.text.draw(context, program_state, button2_title, this.text_image);
+
+        this.shapes.button.draw(context, program_state, button3, this.materials.button)
+        this.shapes.text.set_string("160 PTS", context.context);
+        this.shapes.text.draw(context, program_state, button3_price, this.text_image);
+        this.shapes.text.set_string("Cool Cube", context.context);
+        this.shapes.text.draw(context, program_state, button3_title, this.text_image);
+
+        this.shapes.button.draw(context, program_state, button4, this.materials.button)
+        this.shapes.text.set_string("60 PTS", context.context);
+        this.shapes.text.draw(context, program_state, button4_price, this.text_image);
+        this.shapes.text.set_string("Gold Coin", context.context);
+        this.shapes.text.draw(context, program_state, button4_title, this.text_image);
+
 
     }
     /*
