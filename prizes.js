@@ -254,6 +254,9 @@ export class Prizes extends Scene {                           // **Balloons** sh
         const text1_transform = Mat4.identity().times(Mat4.translation(-1.9, 1, .5))
             .times(Mat4.scale(.17, .17, .17));
 
+        const game_over_transform = Mat4.identity().times(Mat4.translation(-1, 1, .5))
+            .times(Mat4.scale(.17, .17, .17));
+
         const button1_price = Mat4.identity().times(Mat4.translation(-1.9, -1.08, .99))
             .times(Mat4.scale(.05, .05, .05));
         const button1_title = Mat4.identity().times(Mat4.translation(-1.97, -.9, .99))
@@ -275,10 +278,56 @@ export class Prizes extends Scene {                           // **Balloons** sh
             .times(Mat4.scale(.055, .05, .05));
 
 
+        const purchased_globe = Mat4.identity().times(Mat4.translation(-2, -.2, .5))
+            .times(Mat4.rotation(Math.PI/10, 0, 0, 1))
+            .times(Mat4.scale(.08, .08, .08));
+
+        const purchased_icecream = Mat4.identity().times(Mat4.translation(-.92, -.2, .5))
+            .times(Mat4.rotation(Math.PI/10, 0, 0, 1))
+            .times(Mat4.scale(.08, .08, .08));
+
+        const purchased_cube = Mat4.identity().times(Mat4.translation(.11, -.2, .95))
+            .times(Mat4.rotation(Math.PI/10, 0, 0, 1))
+            .times(Mat4.scale(.07, .07, .07));
+
+        const purchased_coin = Mat4.identity().times(Mat4.translation(1.06, -.25, .95))
+            .times(Mat4.rotation(Math.PI/10, 0, 0, 1))
+            .times(Mat4.scale(.07, .07, .07));
+
+
+
+        //DISPLAY TEXT BELOW
+
+        this.shapes.text.set_string("PURCHASED!", context.context);
+
+        //PURCHASED TEXT
+        //ONLY DRAW THIS IF globe has been purchased
+        //if (this.globe_bought == true) { //or something like that
+        this.shapes.text.draw(context, program_state, purchased_globe, this.text_image);
+
+        //same as above, only draw if ice cream was purchased
+        this.shapes.text.draw(context, program_state, purchased_icecream, this.text_image);
+
+        // draw only if cool cube was purchased
+        this.shapes.text.draw(context, program_state, purchased_cube, this.text_image);
+
+        // draw only if gold coin was purchased
+        this.shapes.text.draw(context, program_state, purchased_coin, this.text_image);
+
+
+        // PRIZES AVAILABLE ... only draw if "FINISH BUYING" button has been clicked
         this.shapes.text.set_string("PRIZES AVAILABLE:", context.context);
         this.shapes.text.draw(context, program_state, text1_transform, this.text_image);
 
+        // if all possible prizes have been bought, print this instead:
+        this.shapes.text.set_string("GAME OVER", context.context);
+        //this.shapes.text.draw(context, program_state, game_over_transform, this.text_image);
 
+
+        //END OF PRINTING TEXT
+
+
+        //DISPLAY PRIZES
 
         this.shapes.coin.draw(context, program_state, model_transform_coin, this.materials.coin);
 
@@ -292,6 +341,8 @@ export class Prizes extends Scene {                           // **Balloons** sh
         this.shapes.ice_cream.draw(context, program_state, model_transform_iceCream, this.materials.ice_cream)
         this.shapes.cream.draw(context, program_state, model_transform_cream, this.materials.cream)
         this.shapes.cream.draw(context, program_state, model_transform_cream2, this.materials.cream)
+
+        //DISPLAY BUTTONS
 
         this.shapes.button.draw(context, program_state, button1, this.materials.button)
         this.shapes.text.set_string("260 PTS", context.context);
