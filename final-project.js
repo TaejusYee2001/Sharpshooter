@@ -4,7 +4,9 @@ import {Cube_Outline} from "./cube-outline.js";
 import {CheckCollisionCubeCube, 
   CheckCollisionCubeSphere, 
   CheckCollisionRaySphere, 
+  CheckCollisionPointRectangle,
   CheckCollisionRayPlane} from "./collision-checkers.js";
+  import {Text_Line} from "./examples/text-demo.js";
 const {
   Vector,
   Vector3,
@@ -23,6 +25,8 @@ const {
   Texture,
 } = tiny;
 
+var score = 0;
+var prize_screen = false;
 
 
 export class FinalProject extends Scene {
@@ -41,6 +45,15 @@ export class FinalProject extends Scene {
       crosshair: new Shape_From_File("assets/crosshair.obj/crosshair.obj"),
       bounding_box: new Cube_Outline(),
       balloon: new Shape_From_File("assets/balloon.obj"),
+      "coin": new defs.Capped_Cylinder(200, 50, [0, 1]),
+                        "shelf": new defs.Cube(),
+                        "comp_cube": new defs.Cube(),
+                        //"rabbit": new Shape_From_File("assets/rabbit.obj"),
+                        "globe": new defs.Subdivision_Sphere(4),
+                        "ice_cream": new defs.Closed_Cone(100, 100, [0.0, 1.0]),
+                        "cream": new defs.Subdivision_Sphere(4),
+                        "button": new defs.Square(),
+                        "text": new Text_Line(35),
     };
     // *** Materials
     this.materials = {
@@ -103,6 +116,30 @@ export class FinalProject extends Scene {
         diffusivity: 1,
         specularity: 1,
       }),
+      shelf:  new Material(new defs.Phong_Shader(1), {
+        color: hex_color("#8B0000"),
+        ambient: .2, diffusivity: 1, specularity: .8}),
+    coin: new Material(new defs.Textured_Phong(1), {
+        color: hex_color("#8B8000"),
+        ambient: .2, diffusivity: .8, texture: new Texture("assets/money.png")}),
+    comp_cube: new Material(new defs.Textured_Phong(1), {
+        color: hex_color("#000000"),
+        ambient: .4, diffusivity: .8, specularity: 1, texture: new Texture("assets/companion-cube.png")}),
+    rabbit: new Material(new defs.Phong_Shader(1), {
+        color: hex_color("#FFB6C1"),
+        ambient: .2, diffusivity: 1, specularity: .8}),
+    globe: new Material(new defs.Textured_Phong(1), {
+        color: hex_color("#000000"),
+        ambient: .4, diffusivity: .8, specularity: 1, texture: new Texture("assets/earth.gif")}),
+    ice_cream: new Material(new defs.Textured_Phong(1), {
+        color: hex_color("#5B3C1E"),
+        ambient: .4, diffusivity: 1, specularity: .2, texture: new Texture("assets/fixed_waffle.png")}),
+    cream: new Material(new defs.Textured_Phong(1), {
+        color: hex_color("#FFFDD0"),
+        ambient: .2, diffusivity: 1, specularity: .2, texture: new Texture("assets/ice.png")}),
+    button: new Material(new defs.Phong_Shader(1), {
+        color: hex_color("#051650"),
+        ambient: .2, diffusivity: 1, specularity: .8}),
     };
     //Note: All height/width/depth vals are half of the real height/width/depth, similar to a radius
     this.collision_cubes = { //Named collision objects
@@ -162,7 +199,49 @@ export class FinalProject extends Scene {
         radius2: 1.5 ** 2,
       },
     };
-
+    this.purchase_buttons ={
+      globe : {
+          bought: false,
+          points:220,
+          //Dimensions and position of button associated with item
+          position: vec3(-1.7, -1, .9), //-1.7*.4, -1*0.2, 0.9*1
+          width:  .4, 
+          height: .2,
+          depth: 1, //z
+      },
+      ice_cream :  {
+          bought: false,
+          points: 150,
+          //Dimensions and position of button associated with item
+          position: vec3(-.6, -1, .9), //-0.6*0.4, -1*.2, .9*1
+          width:  .4, 
+          height: .2,
+          depth: 1, //z
+      },
+   
+      cool_cube : { 
+          bought: false,
+          points: 60,
+          //Dimensions and position of button associated with item
+          position: vec3(0.6, -1, .9), //0.6*0.4, -1*0.2, 0.9*1
+          width:  .4, 
+          height: .2,
+          depth: 1, //z
+      },
+      coin : { 
+          bought: false,
+          points: 30,
+          //Dimensions and position of button associated with item
+          position: vec3(1.8, -1, .9), //1.8*0.4, -1*0.2, 0.9*1
+          width:  .4, 
+          height: .2,
+          depth: 1, //z
+      }
+  }
+  this.text_image = new Material(new defs.Textured_Phong(1), {
+    ambient: 1, diffusivity: 0, specularity: 0,
+    texture: new Texture("assets/text.png")
+  });
     /*Matrix & Program State*/
     this.mouse_enabled_canvases = new Set();
     this.eye_location = vec3(0, 2, 40);
@@ -178,6 +257,7 @@ export class FinalProject extends Scene {
     this.obj_picked_pos = null;
     this.follow_mouse = true;
     this.mouse_click = true;
+    this.mouse_up = true;
 
     /*Dart*/
     this.fire_dart = false;
@@ -191,8 +271,10 @@ export class FinalProject extends Scene {
     this.max_darts = 5;
 
     /*Misc*/
-    this.score = 0;
+    //this.score = 0;
     this.first_frame = true;
+    this.count = 0;
+
   }
 
   add_mouse_controls(canvas) {
@@ -208,13 +290,15 @@ export class FinalProject extends Scene {
     //Note that anchor here records the mouse position at the time of the event
     document.addEventListener("mouseup", (e) => {
       e.preventDefault();
-      this.mouse.anchor =
+      this.mouse.anchor = undefined;
+      this.mouse_up =
         this.mouse_click && this.obj_picked ? mouse_position(e) : undefined;
     });
     canvas.addEventListener("mousedown", (e) => {
       //this.follow_mouse = false; //uncomment if crosshair should be put down on click
       this.obj_picked = false;
       this.mouse_click = !this.mouse_click;
+      this.mouse.anchor = mouse_position(e);
       this.fire_dart = this.dart_ready ? true : false;
       if (this.obj_picked_pos)
         this.objects.crosshair.position = this.obj_picked_pos;
@@ -222,7 +306,7 @@ export class FinalProject extends Scene {
     canvas.addEventListener("mousemove", (e) => {
       e.preventDefault();
 
-      if (this.mouse.anchor) this.follow_mouse = true; //activates when mouse is up and moving
+      if (this.mouse_up) this.follow_mouse = true; //activates when mouse is up and moving
       this.mouse.from_center = mouse_position(e);
     });
     canvas.addEventListener("mouseout", (e) => {
@@ -233,7 +317,7 @@ export class FinalProject extends Scene {
   make_control_panel() {
     // Draw the scene's buttons, setup their actions and keyboard shortcuts, and monitor live measurements.
     this.live_string((box) => {
-      box.textContent = "Score: " + this.score;
+      box.textContent = "Score: " + score;
     });
     this.new_line();
 
@@ -305,7 +389,7 @@ export class FinalProject extends Scene {
       //console.log("balloon:", this.balloons[i]);
       if (CheckCollisionCubeCube(this.balloons[i], object)) {
         this.balloons[i].popped = true;
-        this.score += this.balloons[i].points;
+        score += this.balloons[i].points;
         this.balloons[i].points =0; //set points to 0 after it's first added so it won't get re-added every frame a collision is detected
         //console.log("balloon pop!");
       }
@@ -463,6 +547,7 @@ export class FinalProject extends Scene {
       this.darts[this.darts_thrown].drawing_this_dart = true;
       this.darts[this.darts_thrown].sim_start_time = t;
       this.darts_thrown += 1;
+    
     }
 
     /*If not already following the mouse: If they click, check if they are on top of crosshair, pick up crosshair if yes*/
@@ -913,86 +998,476 @@ This also means there's typically a little bit of space between the wall and the
   display(context, program_state) {
     // display():  Called once per frame of animation.
     // Setup -- This part sets up the scene's overall camera matrix, projection matrix, and lights:
-    if (!context.scratchpad.controls) {
-      // this.children.push(context.scratchpad.controls = new defs.Movement_Controls());
-      // Define the global camera and projection matrices, which are stored in program_state.
+    if (!prize_screen){
+      if (!context.scratchpad.controls) {
+        // this.children.push(context.scratchpad.controls = new defs.Movement_Controls());
+        // Define the global camera and projection matrices, which are stored in program_state.
 
-      program_state.set_camera(this.initial_camera_location);
-    }
-
-    if (!this.mouse_enabled_canvases.has(context.canvas)) {
-      this.add_mouse_controls(context.canvas);
-      this.mouse_enabled_canvases.add(context.canvas);
-    }
-
-    program_state.projection_transform = Mat4.perspective(
-      Math.PI / 4,
-      context.width / context.height,
-      0.1,
-      1000
-    );
-
-    if (this.projection_transform_inverse == undefined) {
-      this.projection_transform_inverse = Mat4.inverse(
-        program_state.projection_transform
-      );
-    }
-
-    /*Lighting*/
-    // The parameters of the Light are: position, color, size
-    const light_position = vec4(-10, 10, 20, 1);
-    // The parameters of the Light are: position, color, size
-    program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 1000)];
-
-    const t = program_state.animation_time / 1000,
-      dt = program_state.animation_delta_time / 1000;
-
-      
-    let model_transform = Mat4.identity();
-
-    /*Drawing*/
-    this.draw_background(context, program_state, model_transform, t);
-     this.draw_balloons(context, program_state, t);
-    //this.draw_floor(context, program_state, model_transform);
-    this.draw_wall(context, program_state, model_transform);
-    
-    
-    /*Set up array of darts*/
-    if (this.first_frame) 
-    {
-      for (var i=0; i<this.max_darts;i++){
-        this.darts.push({
-          og_position: vec3(null, null, null),
-          position: vec3(null, null, null),
-          width: 0.15, //x
-          height: 0.15, //y
-          depth: 0.9, //z
-          velocity: vec3(null, null, null), //defined by dart end location
-          stuck: false,
-          up_angle: 0,
-          side_angle: 0,
-          twist_angle: 0,
-          drawing_this_dart: false,
-          sim_start_time: null,
-
-        });
+        program_state.set_camera(this.initial_camera_location);
       }
-      this.first_frame = false;
-    }
 
-    //Draw crosshair, only when they still can throw darts
-    if (this.darts_thrown < this.max_darts) 
-      this.draw_crosshair(context, program_state, model_transform, t);
+      if (!this.mouse_enabled_canvases.has(context.canvas)) {
+        this.add_mouse_controls(context.canvas);
+        this.mouse_enabled_canvases.add(context.canvas);
+      }
+
+      program_state.projection_transform = Mat4.perspective(
+        Math.PI / 4,
+        context.width / context.height,
+        0.1,
+        1000
+      );
+
+      if (this.projection_transform_inverse == undefined) {
+        this.projection_transform_inverse = Mat4.inverse(
+          program_state.projection_transform
+        );
+      }
+
+      /*Lighting*/
+      // The parameters of the Light are: position, color, size
+      const light_position = vec4(-10, 10, 20, 1);
+      // The parameters of the Light are: position, color, size
+      program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 1000)];
+
+      const t = program_state.animation_time / 1000,
+        dt = program_state.animation_delta_time / 1000;
+      //console.log(t);
+        
+      let model_transform = Mat4.identity();
+
+      /*Drawing*/
+      this.draw_background(context, program_state, model_transform, t);
+      this.draw_balloons(context, program_state, t);
+      //this.draw_floor(context, program_state, model_transform);
+      this.draw_wall(context, program_state, model_transform);
+      
+      
+      /*Set up array of darts*/
+      if (this.first_frame) 
+      {
+        for (var i=0; i<this.max_darts;i++){
+          this.darts.push({
+            og_position: vec3(null, null, null),
+            position: vec3(null, null, null),
+            width: 0.15, //x
+            height: 0.15, //y
+            depth: 0.9, //z
+            velocity: vec3(null, null, null), //defined by dart end location
+            stuck: false,
+            up_angle: 0,
+            side_angle: 0,
+            twist_angle: 0,
+            drawing_this_dart: false,
+            sim_start_time: null,
+
+          });
+        }
+        this.first_frame = false;
+      }
+
+      //Draw crosshair, only when they still can throw darts
+      if (this.darts_thrown < this.max_darts) 
+        this.draw_crosshair(context, program_state, model_transform, t);
+      
+      //Draw the darts that have been thrown
+      this.draw_darts(context, program_state, model_transform, t);
+
+      //move camera
+      this.go_up = Mat4.inverse(this.initial_camera_location.times(Mat4.translation(0, 50, 0)));
+
+      if (this.attached != undefined) {
+        program_state.set_camera(this.attached().map((x,i) =>
+            Vector.from(program_state.camera_inverse[i]).mix(x, 0.1)))
+      }
+        /*TODO: Add something to flip to next screen*/ 
+        if (this.darts_thrown == this.max_darts){
+          this.count+=dt;
+          if (this.count >=3){
+            this.projection_transform_inverse = undefined;
+            prize_screen = true;
+            
+          }
+        }
+   } 
+   /*Drawing the Prize Screen */
+    else{
+      program_state.set_camera(Mat4.translation(0, 0, -5));    // Locate the camera here (inverted matrix).
+        program_state.projection_transform = Mat4.perspective(Math.PI / 4, context.width / context.height, 1, 500);
+        // A spinning light to show off the bump map:
+        /*program_state.lights = [new Light(
+            Mat4.rotation(t / 300, 1, 0, 0).times(vec4(3, 2, 10, 1)),
+            color(1, .7, .7, 1), 100000)];*/
+            if (this.projection_transform_inverse == undefined) {
+                this.projection_transform_inverse = Mat4.inverse(
+                  program_state.projection_transform
+                );
+              }
+        const light_position = vec4(0, 5, 5, 1);
+        program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 1000)];
+
+        const t = program_state.animation_time / 1000
+        if (!this.mouse_enabled_canvases.has(context.canvas)) {
+            this.add_mouse_controls(context.canvas);
+            this.mouse_enabled_canvases.add(context.canvas);
+          }
+        //for (let i of [-1, 1]) {                                       // Spin the 3D model shapes as well.
+        const model_transform_coin = Mat4.identity().times(Mat4.translation(1.8, -.2, 0))
+                                                .times(Mat4.rotation(- Math.PI / 4, 0, 1, 0))
+                                                .times(Mat4.rotation(Math.PI/20, 0, 0, 1))
+                                                .times(Mat4.rotation(2 * Math.PI * t /3, 0, 1, 0))
+                                                //.times(Mat4.rotation(Math.PI / 8, 0, 0, 1))
+                                                .times(Mat4.scale(1, 1, .3))
+                                                .times(Mat4.scale(.3, .3, .3));//.times;
+
+
+
+        const model_transform_shelf_1 = Mat4.identity().times(Mat4.translation(0, .5, 0)).times(Mat4.scale(2.5, .07, 1));
+        const model_transform_shelf_2 = model_transform_shelf_1.times(Mat4.translation(0, -17, 0));
+
+        const model_transform_globe = Mat4.identity().times(Mat4.translation(-1.7, 0, 0))
+                                                        .times(Mat4.rotation(Math.PI/20, 0, 0, 1))
+                                                        .times(Mat4.rotation(2 * Math.PI * t /3, 0, 1, 0))
+                                                        .times(Mat4.scale(.5, .5, .5));
+
+
+        const model_transform_compCube = Mat4.identity().times(Mat4.translation(.6, -.15, .5))
+                                                        .times(Mat4.rotation(Math.PI/20, 0, 0, 1))
+                                                        .times(Mat4.rotation(2 * Math.PI * t /3, 0, 1, 0))
+                                                        .times(Mat4.scale(.3, .3, .3));
+
+        const model_transform_iceCream = Mat4.identity().times(Mat4.translation(-.5, -.35, 0))
+            .times(Mat4.rotation(Math.PI/20, 0, 0, 1))
+            .times(Mat4.rotation(2 * Math.PI * t /3, 0, 1, 0))
+            .times(Mat4.rotation(Math.PI/2, 1, 0, 0))
+            .times(Mat4.scale(.25, .25, .25));
+                        ;
+
+        const model_transform_cream = Mat4.identity().times(Mat4.translation(-.56, .04, 0))
+                                                        .times(Mat4.rotation(Math.PI/20, 0, 0, 1))
+                                                        .times(Mat4.rotation(2 * Math.PI * t /3, 0, 1, 0))
+                                                        .times(Mat4.rotation(Math.PI/2, 1, 0, 0))
+                                                        .times(Mat4.scale(.27, .27, .27));
+
+        const model_transform_cream2 =
+        Mat4.identity()
+            .times(Mat4.translation(.77, .2, 0))
+            .times(Mat4.translation(-1.36, .04, 0))
+            .times(Mat4.rotation(Math.PI/20, 0, 0, 1))
+            .times(Mat4.rotation(2 * Math.PI * t /3, 0, 1, 0))
+            .times(Mat4.rotation(Math.PI/2, 1, 0, 0))
+            .times(Mat4.scale(.8, .8, .8))
+            .times(Mat4.scale(.27, .27, .27));
+        /*const model_transform_rabbit = Mat4.identity().times(Mat4.translation(0, -.6, 0))
+                                                        .times(Mat4.scale(.5, .5, .5));*/
+        //this.shapes.rabbit.draw(context, program_state, model_transform_rabbit, this.materials.rabbit);
+        
+        //Globe button
+        const button1 = Mat4.identity()
+            .times(Mat4.translation(-1.7, -1, .9))
+            .times(Mat4.scale(.4, .2, 1))
+        ;
+          //Ice Cream Button
+        const button2 = Mat4.identity()
+            .times(Mat4.translation(-.6, -1, .9))
+            .times(Mat4.scale(.4, .2, 1))
+        ;
+        //Cool Cube Button
+        const button3 = Mat4.identity()
+            .times(Mat4.translation(.6, -1, .9))
+            .times(Mat4.scale(.4, .2, 1))
+        ;
+        //Coin button
+        const button4 = Mat4.identity()
+            .times(Mat4.translation(1.8, -1, .9))
+            .times(Mat4.scale(.4, .2, 1))
+        ;
+
+        //finish buying button
+        const button5 = (Mat4.translation(-2.43, 1.4, .99))
+            .times(Mat4.scale(.45, .15, 1));
+
+        /*Mat4.identity()
+            .times(Mat4.translation(0, -1.45, .9))
+            .times(Mat4.scale(.5, .15, 1))
+        ;*/
+
+
+
+        const text1_transform = Mat4.identity().times(Mat4.translation(-1.9, 1, .5))
+            .times(Mat4.scale(.17, .17, .17));
+
+        const game_over_transform = Mat4.identity().times(Mat4.translation(-1, 1, .5))
+            .times(Mat4.scale(.17, .17, .17));
+
+
+
+        const button1_price = Mat4.identity().times(Mat4.translation(-1.9, -1.08, .99))
+            .times(Mat4.scale(.05, .05, .05));
+        const button1_title = Mat4.identity().times(Mat4.translation(-1.97, -.9, .99))
+            .times(Mat4.scale(.06, .06, .06));
+
+        const button2_price = Mat4.identity().times(Mat4.translation(-.81, -1.08, .99))
+            .times(Mat4.scale(.05, .05, .05));
+        const button2_title = Mat4.identity().times(Mat4.translation(-.92, -.9, .99))
+            .times(Mat4.scale(.055, .05, .05));
+
+        const button3_price = Mat4.identity().times(Mat4.translation(.35, -1.08, .99))
+            .times(Mat4.scale(.05, .05, .05));
+        const button3_title = Mat4.identity().times(Mat4.translation(.26, -.9, .99))
+            .times(Mat4.scale(.055, .05, .05));
+
+        const button4_price = Mat4.identity().times(Mat4.translation(1.57, -1.08, .99))
+            .times(Mat4.scale(.05, .05, .05));
+        const button4_title = Mat4.identity().times(Mat4.translation(1.43, -.9, .99))
+            .times(Mat4.scale(.055, .05, .05));
+
+        const button5_text = Mat4.identity().times(Mat4.translation(-2.7, 1.4, .99))
+            .times(Mat4.scale(.12, .12, .12));
+
+        const total_points_text = Mat4.identity().times(Mat4.translation(1.4, 1.4, .99))
+            .times(Mat4.scale(.05, .08, .08));
+
+        const point_count_text = Mat4.identity().times(Mat4.translation(2.6, 1.4, .99))
+            .times(Mat4.scale(.05, .08, .08));
+
+
+        const purchased_globe = Mat4.identity().times(Mat4.translation(-2, -.2, .5))
+            .times(Mat4.rotation(Math.PI/10, 0, 0, 1))
+            .times(Mat4.scale(.08, .08, .08));
+
+        const purchased_icecream = Mat4.identity().times(Mat4.translation(-.92, -.2, .5))
+            .times(Mat4.rotation(Math.PI/10, 0, 0, 1))
+            .times(Mat4.scale(.08, .08, .08));
+
+        const purchased_cube = Mat4.identity().times(Mat4.translation(.11, -.2, .95))
+            .times(Mat4.rotation(Math.PI/10, 0, 0, 1))
+            .times(Mat4.scale(.07, .07, .07));
+
+        const purchased_coin = Mat4.identity().times(Mat4.translation(1.06, -.25, .95))
+            .times(Mat4.rotation(Math.PI/10, 0, 0, 1))
+            .times(Mat4.scale(.07, .07, .07));
+        
+        this.shapes.text.set_string("PURCHASED!", context.context);
+        
+        /*TODO: Mouse Picking on prizes */
+        if (this.mouse.anchor){
+            console.log("mouse click!");
+            //Calculate ray position from mouse coords
+            let x = (2.0 * this.mouse.from_center[0]) / 1080;
+            let y = (2.0 * this.mouse.from_center[1]) / 600;
+            let z = -1.0; //don't need to reverse perspective division, just set -1
+            let ray_norm_parallel_proj = vec4(x, -y, z, 1.0);
+            let ray_ES = this.projection_transform_inverse.times(
+            ray_norm_parallel_proj);
+            ray_ES = vec4(ray_ES[0], ray_ES[1], -1.0, 0);
+            let ray_world = program_state.camera_inverse.times(ray_ES).to3();
+            ray_world.normalize();
+
+            let ray_origin = vec3(0, 0, 5); //current camera location
+            //Check where the ray from the mouse will intersect the crosshair plane - that is the point the crosshair should move to
+            let plane_normal = vec3(0, 0, 1);
+            let d = -1 * 0.9; 
+            //console.log(ray_world);
+            //This is the point where the mouse intersects the z=0.9 plane, plane the buttons lie in 
+            let mouse_pos = CheckCollisionRayPlane(
+                ray_world,
+                ray_origin,
+                plane_normal,
+                d
+            );    
+            console.log(mouse_pos);
+            console.log(this.purchase_buttons.globe);
+
+            var collision_globe = CheckCollisionPointRectangle(mouse_pos, this.purchase_buttons.globe);
+            var collision_ice = CheckCollisionPointRectangle(mouse_pos, this.purchase_buttons.ice_cream);
+            var collision_cube = CheckCollisionPointRectangle(mouse_pos, this.purchase_buttons.cool_cube);
+            var collision_coin =  CheckCollisionPointRectangle(mouse_pos, this.purchase_buttons.coin);
+            console.log(collision_globe);
+            if (collision_globe){
+                console.log("collision!");
+                if (!this.purchase_buttons.globe.bought){
+                    if (this.purchase_buttons.globe.points <= score){
+                        score -= this.purchase_buttons.globe.points;
+                        this.purchase_buttons.globe.bought = true;
+                    }
+                }
+                
+                
+            }
+            else if (collision_ice){
+                console.log("collision!");
+                if (!this.purchase_buttons.ice_cream.bought){
+                    if (this.purchase_buttons.ice_cream.points <= score){
+                        score -= this.purchase_buttons.ice_cream.points;
+                        this.purchase_buttons.ice_cream.bought = true;
+
+                    }
+
+                }
+            }
+            else if (collision_cube){
+                console.log("collision!");
+               if (!this.purchase_buttons.cool_cube.bought){
+                    if (this.purchase_buttons.cool_cube.points <= score){
+                        score -= this.purchase_buttons.cool_cube.points;
+                        this.purchase_buttons.cool_cube.bought = true;}
+               }
+                
+            }
+            else if (collision_coin){
+                console.log("collision!");
+                if (!this.purchase_buttons.coin.bought){
+                    if (this.purchase_buttons.coin.points <=score){
+                        score -= this.purchase_buttons.coin.points;
+                        this.purchase_buttons.coin.bought = true;
+
+                    }
+                }
+            }
+            
+            
+           
+        }
+          
+
+        //DISPLAY TEXT BELOW
+
+        //this.shapes.text.set_string("PURCHASED!", context.context);
+
+        //PURCHASED TEXT
+        //ONLY DRAW THIS IF globe has been purchased
+        //Globe
+        if (this.purchase_buttons.globe.bought){
+
+            this.shapes.text.set_string("PURCHASED!", context.context);
+            this.shapes.text.draw(context, program_state, purchased_globe, this.text_image);
+        }
+        else if (this.purchase_buttons.globe.points > score){
+            
+            this.shapes.text.set_string("NOT ENOUGH FUNDS", context.context);
+            this.shapes.text.draw(context, program_state, purchased_globe, this.text_image);
+        }
+        //Ice Cream
+        if (this.purchase_buttons.ice_cream.bought){
+
+            this.shapes.text.set_string("PURCHASED!", context.context);
+            this.shapes.text.draw(context, program_state, purchased_icecream, this.text_image);
+        }
+        else if (this.purchase_buttons.ice_cream.points > score){
+            
+            this.shapes.text.set_string("NOT ENOUGH FUNDS", context.context);
+            this.shapes.text.draw(context, program_state, purchased_icecream, this.text_image);
+        }
+
+        //Cube
+        if (this.purchase_buttons.cool_cube.bought){
+
+            this.shapes.text.set_string("PURCHASED!", context.context);
+            this.shapes.text.draw(context, program_state, purchased_cube, this.text_image);
+        }
+        else if (this.purchase_buttons.cool_cube.points > score){
+            
+            this.shapes.text.set_string("NOT ENOUGH FUNDS", context.context);
+            this.shapes.text.draw(context, program_state, purchased_cube, this.text_image);
+        }
+        //Coin
+        if (this.purchase_buttons.coin.bought){
+
+            this.shapes.text.set_string("PURCHASED!", context.context);
+            this.shapes.text.draw(context, program_state, purchased_coin, this.text_image);
+        }
+        else if (this.purchase_buttons.coin.points > score){
+            
+            this.shapes.text.set_string("NOT ENOUGH FUNDS", context.context);
+            this.shapes.text.draw(context, program_state, purchased_coin, this.text_image);
+        }
+
+
+
+        
+        // this.shapes.text.set_string("PURCHASED!", context.context);
+        
+        //same as above, only draw if ice cream was purchased
+        // if (this.purchase_buttons.ice_cream.bought)
+        //     this.shapes.text.draw(context, program_state, purchased_icecream, this.text_image);
+
+        // // draw only if cool cube was purchased
+        // if (this.purchase_buttons.cool_cube.bought)
+        //     this.shapes.text.draw(context, program_state, purchased_cube, this.text_image);
+
+        // // draw only if gold coin was purchased
+        // if (this.purchase_buttons.coin.bought)
+        //     this.shapes.text.draw(context, program_state, purchased_coin, this.text_image);
+
+
+        // PRIZES AVAILABLE ... only draw if "FINISH BUYING" button has been clicked
+        this.shapes.text.set_string("PRIZES AVAILABLE:", context.context);
+        this.shapes.text.draw(context, program_state, text1_transform, this.text_image);
+
+        // if all possible prizes have been bought, print this instead:
+        this.shapes.text.set_string("GAME OVER", context.context);
+        //this.shapes.text.draw(context, program_state, game_over_transform, this.text_image);
+
+        this.shapes.text.set_string("DONE", context.context);
+        this.shapes.text.draw(context, program_state, button5_text, this.text_image);
+
+        this.shapes.text.set_string("TOTAL PTS LEFT: ", context.context);
+        this.shapes.text.draw(context, program_state, total_points_text, this.text_image);
+
+        //THIS SHOULD CHANGE DEPENDING ON HOW MUCH WAS PURCHASED
+        this.shapes.text.set_string(score.toString(), context.context);
+        this.shapes.text.draw(context, program_state, point_count_text, this.text_image);
+
+
+        //END OF PRINTING TEXT
+
+
+        //DISPLAY PRIZES
+
+        this.shapes.coin.draw(context, program_state, model_transform_coin, this.materials.coin);
+
+        //this.shapes.shelf.draw(context, program_state, model_transform_shelf_1, this.materials.shelf);
+        this.shapes.shelf.draw(context, program_state, model_transform_shelf_2, this.materials.shelf);
+
+        this.shapes.comp_cube.draw(context, program_state, model_transform_compCube, this.materials.comp_cube);
+        this.shapes.comp_cube.draw(context, program_state, model_transform_compCube, this.materials.comp_cube);
+
+        this.shapes.globe.draw(context, program_state, model_transform_globe, this.materials.globe);
+        this.shapes.ice_cream.draw(context, program_state, model_transform_iceCream, this.materials.ice_cream)
+        this.shapes.cream.draw(context, program_state, model_transform_cream, this.materials.cream)
+        this.shapes.cream.draw(context, program_state, model_transform_cream2, this.materials.cream)
+
+        //DISPLAY BUTTONS
+
+        this.shapes.button.draw(context, program_state, button1, this.materials.button)
+        this.shapes.text.set_string("220 PTS", context.context);
+        this.shapes.text.draw(context, program_state, button1_price, this.text_image);
+        this.shapes.text.set_string("A4 Globe", context.context);
+        this.shapes.text.draw(context, program_state, button1_title, this.text_image);
+
+
+        this.shapes.button.draw(context, program_state, button2, this.materials.button)
+        this.shapes.text.set_string("150 PTS", context.context);
+        this.shapes.text.draw(context, program_state, button2_price, this.text_image);
+        this.shapes.text.set_string("Ice Cream", context.context);
+        this.shapes.text.draw(context, program_state, button2_title, this.text_image);
+
+        this.shapes.button.draw(context, program_state, button3, this.materials.button)
+        this.shapes.text.set_string("60 PTS", context.context);
+        this.shapes.text.draw(context, program_state, button3_price, this.text_image);
+        this.shapes.text.set_string("Cool Cube", context.context);
+        this.shapes.text.draw(context, program_state, button3_title, this.text_image);
+
+        this.shapes.button.draw(context, program_state, button4, this.materials.button)
+        this.shapes.text.set_string("30 PTS", context.context);
+        this.shapes.text.draw(context, program_state, button4_price, this.text_image);
+        this.shapes.text.set_string("Gold Coin", context.context);
+        this.shapes.text.draw(context, program_state, button4_title, this.text_image);
+
+        this.shapes.button.draw(context, program_state, button5, this.materials.button)
+
     
-    //Draw the darts that have been thrown
-    this.draw_darts(context, program_state, model_transform, t);
-
-    //move camera
-    this.go_up = Mat4.inverse(this.initial_camera_location.times(Mat4.translation(0, 50, 0)));
-
-    if (this.attached != undefined) {
-      program_state.set_camera(this.attached().map((x,i) =>
-          Vector.from(program_state.camera_inverse[i]).mix(x, 0.1)))
     }
   }
   

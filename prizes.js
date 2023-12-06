@@ -1,9 +1,8 @@
 import {defs, tiny} from './examples/common.js';
 // Pull these names into this module's scope for convenience:
 import {Text_Line} from "./examples/text-demo.js";
-
+import {CheckCollisionPointRectangle, CheckCollisionRayPlane} from "./collision-checkers.js";
 const {vec3, vec4, vec, color, hex_color, Mat4, Light, Shape, Material, Shader, Texture, Scene} = tiny;
-
 export class Shape_From_File extends Shape {                                   // **Shape_From_File** is a versatile standalone Shape that imports
                                                                                // all its arrays' data from an .obj 3D model file.
     constructor(filename) {
@@ -105,13 +104,7 @@ export class Shape_From_File extends Shape {                                   /
     }
 }
 
-export class Prizes extends Scene {                           // **Balloons** show how to load a single 3D model from an OBJ file.
-    // Detailed model files can be used in place of simpler primitive-based
-    // shapes to add complexity to a scene.  Simpler primitives in your scene
-    // can just be thought of as placeholders until you find a model file
-    // that fits well.  This demo shows the teapot model twice, with one
-    // teapot showing off the Fake_Bump_Map effect while the other has a
-    // regular texture and Phong lighting.
+export class Prizes extends Scene {                           
     constructor() {
         super();
         // Load the model file:
@@ -161,8 +154,76 @@ export class Prizes extends Scene {                           // **Balloons** sh
             ambient: 1, diffusivity: 0, specularity: 0,
             texture: new Texture("assets/text.png")
         });
+        this.purchase_buttons ={
+            globe : {
+                bought: false,
+                points:260,
+                //Dimensions and position of button associated with item
+                position: vec3(-1.7, -1, .9), //-1.7*.4, -1*0.2, 0.9*1
+                width:  .4, 
+                height: .2,
+                depth: 1, //z
+            },
+            ice_cream :  {
+                bought: false,
+                points: 200,
+                //Dimensions and position of button associated with item
+                position: vec3(-.6, -1, .9), //-0.6*0.4, -1*.2, .9*1
+                width:  .4, 
+                height: .2,
+                depth: 1, //z
+            },
+         
+            cool_cube : { 
+                bought: false,
+                points: 160,
+                //Dimensions and position of button associated with item
+                position: vec3(0.6, -1, .9), //0.6*0.4, -1*0.2, 0.9*1
+                width:  .4, 
+                height: .2,
+                depth: 1, //z
+            },
+            coin : { 
+                bought: false,
+                points: 60,
+                //Dimensions and position of button associated with item
+                position: vec3(1.8, -1, .9), //1.8*0.4, -1*0.2, 0.9*1
+                width:  .4, 
+                height: .2,
+                depth: 1, //z
+            }
+        }
+        this.mouse_enabled_canvases = new Set();
+        this.total_points = 200; //needs to be set based on score
+        this.projection_transform_inverse = undefined;
 
     }
+    add_mouse_controls(canvas) {
+        // add_mouse_controls():  Attach HTML mouse events to the drawing canvas.
+        //note that y vals on from_center are inverted
+        this.mouse = { from_center: vec(0, 0) };
+        const mouse_position = (e, rect = canvas.getBoundingClientRect()) =>
+          vec(
+            e.clientX - (rect.left + rect.right) / 2,
+            e.clientY - (rect.bottom + rect.top) / 2
+          );
+        // Set up mouse response.  The last one stops us from reacting if the mouse leaves the canvas:
+        //Note that anchor here records the mouse position at the time of the event
+        document.addEventListener("mouseup", e => {
+            this.mouse.anchor = undefined;
+        });
+        canvas.addEventListener("mousedown", e => {
+            e.preventDefault();
+            this.mouse.anchor = mouse_position(e);
+        });
+        canvas.addEventListener("mousemove", e => {
+            e.preventDefault();
+            this.mouse.from_center = mouse_position(e);
+        });
+        canvas.addEventListener("mouseout", e => {
+            if (!this.mouse.anchor) this.mouse.from_center.scale_by(0)
+        });
+      }
 
     display(context, program_state) {
         //const t = program_state.animation_time;
@@ -173,12 +234,19 @@ export class Prizes extends Scene {                           // **Balloons** sh
         /*program_state.lights = [new Light(
             Mat4.rotation(t / 300, 1, 0, 0).times(vec4(3, 2, 10, 1)),
             color(1, .7, .7, 1), 100000)];*/
-
+            if (this.projection_transform_inverse == undefined) {
+                this.projection_transform_inverse = Mat4.inverse(
+                  program_state.projection_transform
+                );
+              }
         const light_position = vec4(0, 5, 5, 1);
         program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 1000)];
 
         const t = program_state.animation_time / 1000
-
+        if (!this.mouse_enabled_canvases.has(context.canvas)) {
+            this.add_mouse_controls(context.canvas);
+            this.mouse_enabled_canvases.add(context.canvas);
+          }
         //for (let i of [-1, 1]) {                                       // Spin the 3D model shapes as well.
         const model_transform_coin = Mat4.identity().times(Mat4.translation(1.8, -.2, 0))
                                                 .times(Mat4.rotation(- Math.PI / 4, 0, 1, 0))
@@ -229,20 +297,23 @@ export class Prizes extends Scene {                           // **Balloons** sh
         /*const model_transform_rabbit = Mat4.identity().times(Mat4.translation(0, -.6, 0))
                                                         .times(Mat4.scale(.5, .5, .5));*/
         //this.shapes.rabbit.draw(context, program_state, model_transform_rabbit, this.materials.rabbit);
-
+        
+        //Globe button
         const button1 = Mat4.identity()
             .times(Mat4.translation(-1.7, -1, .9))
             .times(Mat4.scale(.4, .2, 1))
         ;
-
+          //Ice Cream Button
         const button2 = Mat4.identity()
             .times(Mat4.translation(-.6, -1, .9))
             .times(Mat4.scale(.4, .2, 1))
         ;
+        //Cool Cube Button
         const button3 = Mat4.identity()
             .times(Mat4.translation(.6, -1, .9))
             .times(Mat4.scale(.4, .2, 1))
         ;
+        //Coin button
         const button4 = Mat4.identity()
             .times(Mat4.translation(1.8, -1, .9))
             .times(Mat4.scale(.4, .2, 1))
@@ -312,26 +383,158 @@ export class Prizes extends Scene {                           // **Balloons** sh
         const purchased_coin = Mat4.identity().times(Mat4.translation(1.06, -.25, .95))
             .times(Mat4.rotation(Math.PI/10, 0, 0, 1))
             .times(Mat4.scale(.07, .07, .07));
+        
+        this.shapes.text.set_string("PURCHASED!", context.context);
+        
+        /*TODO: Mouse Picking on prizes */
+        if (this.mouse.anchor){
+            console.log("mouse click!");
+            //Calculate ray position from mouse coords
+            let x = (2.0 * this.mouse.from_center[0]) / 1080;
+            let y = (2.0 * this.mouse.from_center[1]) / 600;
+            let z = -1.0; //don't need to reverse perspective division, just set -1
+            let ray_norm_parallel_proj = vec4(x, -y, z, 1.0);
+            let ray_ES = this.projection_transform_inverse.times(
+            ray_norm_parallel_proj);
+            ray_ES = vec4(ray_ES[0], ray_ES[1], -1.0, 0);
+            let ray_world = program_state.camera_inverse.times(ray_ES).to3();
+            ray_world.normalize();
 
+            let ray_origin = vec3(0, 0, 5); //current camera location
+            //Check where the ray from the mouse will intersect the crosshair plane - that is the point the crosshair should move to
+            let plane_normal = vec3(0, 0, 1);
+            let d = -1 * 0.9; 
+            //console.log(ray_world);
+            //This is the point where the mouse intersects the z=0.9 plane, plane the buttons lie in 
+            let mouse_pos = CheckCollisionRayPlane(
+                ray_world,
+                ray_origin,
+                plane_normal,
+                d
+            );    
+            console.log(mouse_pos);
+            console.log(this.purchase_buttons.globe);
 
+            var collision_globe = CheckCollisionPointRectangle(mouse_pos, this.purchase_buttons.globe);
+            var collision_ice = CheckCollisionPointRectangle(mouse_pos, this.purchase_buttons.ice_cream);
+            var collision_cube = CheckCollisionPointRectangle(mouse_pos, this.purchase_buttons.cool_cube);
+            var collision_coin =  CheckCollisionPointRectangle(mouse_pos, this.purchase_buttons.coin);
+            console.log(collision_globe);
+            if (collision_globe){
+                console.log("collision!");
+                if (!this.purchase_buttons.globe.bought){
+                    if (this.purchase_buttons.globe.points <= this.total_points){
+                        this.total_points -= this.purchase_buttons.globe.points;
+                        this.purchase_buttons.globe.bought = true;
+                    }
+                }
+                
+                
+            }
+            else if (collision_ice){
+                console.log("collision!");
+                if (!this.purchase_buttons.ice_cream.bought){
+                    if (this.purchase_buttons.ice_cream.points <= this.total_points){
+                        this.total_points -= this.purchase_buttons.ice_cream.points;
+                        this.purchase_buttons.ice_cream.bought = true;
+
+                    }
+
+                }
+            }
+            else if (collision_cube){
+                console.log("collision!");
+               if (!this.purchase_buttons.cool_cube.bought){
+                    if (this.purchase_buttons.cool_cube.points <= this.total_points){
+                        this.total_points -= this.purchase_buttons.cool_cube.points;
+                        this.purchase_buttons.cool_cube.bought = true;}
+               }
+                
+            }
+            else if (collision_coin){
+                console.log("collision!");
+                if (!this.purchase_buttons.coin.bought){
+                    if (this.purchase_buttons.coin.points <= this.total_points){
+                        this.total_points -= this.purchase_buttons.coin.points;
+                        this.purchase_buttons.coin.bought = true;
+
+                    }
+                }
+            }
+            
+            
+           
+        }
+          
 
         //DISPLAY TEXT BELOW
 
-        this.shapes.text.set_string("PURCHASED!", context.context);
+        //this.shapes.text.set_string("PURCHASED!", context.context);
 
         //PURCHASED TEXT
         //ONLY DRAW THIS IF globe has been purchased
-        //if (this.globe_bought == true) { //or something like that
-        this.shapes.text.draw(context, program_state, purchased_globe, this.text_image);
+        //Globe
+        if (this.purchase_buttons.globe.bought){
 
+            this.shapes.text.set_string("PURCHASED!", context.context);
+            this.shapes.text.draw(context, program_state, purchased_globe, this.text_image);
+        }
+        else if (this.purchase_buttons.globe.points > this.total_points){
+            
+            this.shapes.text.set_string("NOT ENOUGH FUNDS", context.context);
+            this.shapes.text.draw(context, program_state, purchased_globe, this.text_image);
+        }
+        //Ice Cream
+        if (this.purchase_buttons.ice_cream.bought){
+
+            this.shapes.text.set_string("PURCHASED!", context.context);
+            this.shapes.text.draw(context, program_state, purchased_icecream, this.text_image);
+        }
+        else if (this.purchase_buttons.ice_cream.points > this.total_points){
+            
+            this.shapes.text.set_string("NOT ENOUGH FUNDS", context.context);
+            this.shapes.text.draw(context, program_state, purchased_icecream, this.text_image);
+        }
+
+        //Cube
+        if (this.purchase_buttons.cool_cube.bought){
+
+            this.shapes.text.set_string("PURCHASED!", context.context);
+            this.shapes.text.draw(context, program_state, purchased_cube, this.text_image);
+        }
+        else if (this.purchase_buttons.cool_cube.points > this.total_points){
+            
+            this.shapes.text.set_string("NOT ENOUGH FUNDS", context.context);
+            this.shapes.text.draw(context, program_state, purchased_cube, this.text_image);
+        }
+        //Coin
+        if (this.purchase_buttons.coin.bought){
+
+            this.shapes.text.set_string("PURCHASED!", context.context);
+            this.shapes.text.draw(context, program_state, purchased_coin, this.text_image);
+        }
+        else if (this.purchase_buttons.coin.points > this.total_points){
+            
+            this.shapes.text.set_string("NOT ENOUGH FUNDS", context.context);
+            this.shapes.text.draw(context, program_state, purchased_coin, this.text_image);
+        }
+
+
+
+        
+        // this.shapes.text.set_string("PURCHASED!", context.context);
+        
         //same as above, only draw if ice cream was purchased
-        //this.shapes.text.draw(context, program_state, purchased_icecream, this.text_image);
+        // if (this.purchase_buttons.ice_cream.bought)
+        //     this.shapes.text.draw(context, program_state, purchased_icecream, this.text_image);
 
-        // draw only if cool cube was purchased
-        //this.shapes.text.draw(context, program_state, purchased_cube, this.text_image);
+        // // draw only if cool cube was purchased
+        // if (this.purchase_buttons.cool_cube.bought)
+        //     this.shapes.text.draw(context, program_state, purchased_cube, this.text_image);
 
-        // draw only if gold coin was purchased
-        //this.shapes.text.draw(context, program_state, purchased_coin, this.text_image);
+        // // draw only if gold coin was purchased
+        // if (this.purchase_buttons.coin.bought)
+        //     this.shapes.text.draw(context, program_state, purchased_coin, this.text_image);
 
 
         // PRIZES AVAILABLE ... only draw if "FINISH BUYING" button has been clicked
@@ -349,7 +552,7 @@ export class Prizes extends Scene {                           // **Balloons** sh
         this.shapes.text.draw(context, program_state, total_points_text, this.text_image);
 
         //THIS SHOULD CHANGE DEPENDING ON HOW MUCH WAS PURCHASED
-        this.shapes.text.set_string("000", context.context);
+        this.shapes.text.set_string(this.total_points.toString(), context.context);
         this.shapes.text.draw(context, program_state, point_count_text, this.text_image);
 
 
