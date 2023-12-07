@@ -33,6 +33,7 @@ var PRIZE = 1;
 var GAME_OVER=2;
 
 
+
 export class FinalProject extends Scene {
   constructor() {
     // constructor(): Scenes begin by populating initial values like the Shapes and Materials they'll need.
@@ -144,7 +145,11 @@ export class FinalProject extends Scene {
     button: new Material(new defs.Phong_Shader(1), {
         color: hex_color("#051650"),
         ambient: .2, diffusivity: 1, specularity: .8}),
-    };
+    
+    button2: new Material(new defs.Phong_Shader(1), {
+      color: hex_color("#ffbf00"),
+      ambient: .2, diffusivity: 1, specularity: .8}),
+   };
     //Note: All height/width/depth vals are half of the real height/width/depth, similar to a radius
     this.collision_cubes = { //Named collision objects
       floor: {
@@ -254,6 +259,14 @@ export class FinalProject extends Scene {
     height:4,
     depth:1,
   }
+  this.play_again_button = {
+    
+      position: vec3(2.1,-1.2,0.99),
+    width:0.7,
+    height:0.15,
+    depth:1,
+
+  }
   this.text_image = new Material(new defs.Textured_Phong(1), {
     ambient: 1, diffusivity: 0, specularity: 0,
     texture: new Texture("assets/text.png")
@@ -289,6 +302,7 @@ export class FinalProject extends Scene {
     /*Misc*/
     //this.score = 0;
     this.first_frame = true;
+    this.refill_darts=false;
     this.count = 0;
     this.current_scene = GAME;
 
@@ -957,7 +971,7 @@ export class FinalProject extends Scene {
 
   /*Loops through this.darts to draw darts that have been thrown*/
   draw_darts(context, program_state, model_transform, t) {
-    for (var i=0; i<this.max_darts;i++){
+    for (var i=0; i<this.darts.length;i++){
       if (this.darts[i].drawing_this_dart) {
         let current_time = t - this.darts[i].sim_start_time;
 
@@ -1061,7 +1075,7 @@ This also means there's typically a little bit of space between the wall and the
       
       
       /*Set up array of darts*/
-      if (this.first_frame) 
+      if (this.first_frame || this.refill_darts) 
       {
         for (var i=0; i<this.max_darts;i++){
           this.darts.push({
@@ -1081,6 +1095,7 @@ This also means there's typically a little bit of space between the wall and the
           });
         }
         this.first_frame = false;
+        this.refill_darts=false;
       }
 
       //Draw crosshair, only when they still can throw darts
@@ -1099,11 +1114,11 @@ This also means there's typically a little bit of space between the wall and the
       }
         /*TODO: Add something to flip to next screen*/ 
         if (this.darts_thrown == this.max_darts){
-          const prize_screen_btn_transform = (Mat4.translation(23, -13, -10))
-            .times(Mat4.scale(13, 4, 1));
+          const prize_screen_btn_transform = (Mat4.translation(23, -15, -10))
+            .times(Mat4.scale(13, 2.5, 1));
           this.shapes.button.draw(context, program_state, prize_screen_btn_transform, this.materials.button);
 
-          const prize_screen_btn_text = Mat4.identity().times(Mat4.translation(10.25, -10.25, 0))
+          const prize_screen_btn_text = Mat4.identity().times(Mat4.translation(10.25, -11.85, 0))
             .times(Mat4.scale(1, 1, 1));
           this.shapes.text.set_string("GO TO PRIZES", context.context);
           this.shapes.text.draw(context, program_state, prize_screen_btn_text, this.text_image);
@@ -1248,7 +1263,7 @@ This also means there's typically a little bit of space between the wall and the
 
         const button1_price = Mat4.identity().times(Mat4.translation(-1.9, -1.08, .99))
             .times(Mat4.scale(.05, .05, .05));
-        const button1_title = Mat4.identity().times(Mat4.translation(-1.97, -.9, .99))
+        const button1_title = Mat4.identity().times(Mat4.translation(-1.85, -.9, .99))
             .times(Mat4.scale(.06, .06, .06));
 
         const button2_price = Mat4.identity().times(Mat4.translation(-.81, -1.08, .99))
@@ -1483,7 +1498,7 @@ This also means there's typically a little bit of space between the wall and the
         this.shapes.button.draw(context, program_state, button1, this.materials.button)
         this.shapes.text.set_string("220 PTS", context.context);
         this.shapes.text.draw(context, program_state, button1_price, this.text_image);
-        this.shapes.text.set_string("A4 Globe", context.context);
+        this.shapes.text.set_string("Earth", context.context);
         this.shapes.text.draw(context, program_state, button1_title, this.text_image);
 
 
@@ -1511,9 +1526,17 @@ This also means there's typically a little bit of space between the wall and the
     }
     //display game over screen - should draw your prizes spinning and some game finished text 
     else if (this.current_scene == GAME_OVER){
-
+      if (!this.mouse_enabled_canvases.has(context.canvas)) {
+        this.add_mouse_controls(context.canvas);
+        this.mouse_enabled_canvases.add(context.canvas);
+      }
       program_state.set_camera(Mat4.translation(0, 0, -5));    // Locate the camera here (inverted matrix).
       program_state.projection_transform = Mat4.perspective(Math.PI / 4, context.width / context.height, 1, 500);
+      if (this.projection_transform_inverse == undefined) {
+        this.projection_transform_inverse = Mat4.inverse(
+          program_state.projection_transform
+        );
+      }
       const light_position = vec4(0, 5, 5, 1);
       program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 1000)];
 
@@ -1583,6 +1606,62 @@ This also means there's typically a little bit of space between the wall and the
       //Coin
        if (this.purchase_buttons.coin.bought){
         this.shapes.coin.draw(context, program_state, model_transform_coin, this.materials.coin);
+
+      }
+      const play_again_button = (Mat4.translation(2.1,-1.2, .99))
+      .times(Mat4.scale(.7, .15, 1));
+      this.shapes.text.set_string("PLAY AGAIN", context.context);
+      const play_again_text = Mat4.identity().times(Mat4.translation(1.55, -1.225, .99))
+            .times(Mat4.scale(.08, .08, .12));
+      this.shapes.text.draw(context, program_state, play_again_text, this.text_image);
+      this.shapes.button.draw(context, program_state, play_again_button, this.materials.button2);
+      if (this.mouse.anchor){
+        //console.log("mouse click!");
+            //Calculate ray position from mouse coords
+            let ray_world = this.mouse_to_world_coords(program_state);
+
+            let ray_origin = vec3(0, 0, 5); //current camera location
+            //Check where the ray from the mouse will intersect the crosshair plane - that is the point the crosshair should move to
+            let plane_normal = vec3(0, 0, 1);
+            let d = -1 * 0.99; 
+            //console.log(ray_world);
+            //This is the point where the mouse intersects the z=0.9 plane, plane the buttons lie in 
+            let mouse_pos = CheckCollisionRayPlane(
+                ray_world,
+                ray_origin,
+                plane_normal,
+                d
+            );  
+            if (CheckCollisionPointRectangle(mouse_pos, this.play_again_button)){
+              console.log("collision");
+              this.mouse.anchor = undefined;
+              
+              this.darts_thrown = 0;
+              //this.first_frame= true;
+              for (var i = 0; i < this.balloons.length; i++) {
+                //console.log("balloon:", this.balloons[i]);
+                
+                  this.balloons[i].popped = false;
+                  if (i<7)
+                    this.balloons[i].points =10; 
+                  else if (i<9)
+                    this.balloons[i].points = 30;
+                  else 
+                     this.balloons[i].points = 100;
+              }
+              
+                this.purchase_buttons.globe.bought=false;
+                this.purchase_buttons.ice_cream.bought=false;
+                this.purchase_buttons.cool_cube.bought=false;
+                this.purchase_buttons.coin.bought=false;
+              this.darts.length=0;
+              this.dart_ready=true;
+              this.refill_darts = true;
+              score=0;
+              this.current_scene = GAME;
+
+
+            } 
 
       }
       
