@@ -1570,18 +1570,18 @@ This also means there's typically a little bit of space between the wall and the
 
         
       }
-      else if (this.purchase_buttons.ice_cream.bought){
+       if (this.purchase_buttons.ice_cream.bought){
         this.shapes.ice_cream.draw(context, program_state, model_transform_iceCream, this.materials.ice_cream);
         this.shapes.cream.draw(context, program_state, model_transform_cream, this.materials.cream);
         this.shapes.cream.draw(context, program_state, model_transform_cream2, this.materials.cream);
       }
-      else if (this.purchase_buttons.cool_cube.bought){
+       if (this.purchase_buttons.cool_cube.bought){
         this.shapes.comp_cube.draw(context, program_state, model_transform_compCube, this.materials.comp_cube);
         this.shapes.comp_cube.draw(context, program_state, model_transform_compCube, this.materials.comp_cube);
        
       }
       //Coin
-      else if (this.purchase_buttons.coin.bought){
+       if (this.purchase_buttons.coin.bought){
         this.shapes.coin.draw(context, program_state, model_transform_coin, this.materials.coin);
 
       }
