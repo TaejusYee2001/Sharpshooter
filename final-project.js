@@ -142,6 +142,9 @@ export class FinalProject extends Scene {
     cream: new Material(new defs.Textured_Phong(1), {
         color: hex_color("#FFFDD0"),
         ambient: .2, diffusivity: 1, specularity: .2, texture: new Texture("assets/ice.png")}),
+    red_wood: new Material(new defs.Textured_Phong(1), {
+          color: hex_color("#ad0c0c"),
+          ambient: .28, diffusivity: 0.8, specularity: .2, texture: new Texture("assets/black-striped-cardboard-texture.jpg")}),
     button: new Material(new defs.Phong_Shader(1), {
         color: hex_color("#051650"),
         ambient: .2, diffusivity: 1, specularity: .8}),
@@ -294,10 +297,10 @@ export class FinalProject extends Scene {
     this.dart_ready = true;
     this.dart_wall_point = null;
     //Travel time and dart origin should be adjusted at same time to make sure they make sense, ex. putting dart_origin super far and travel time super low will make the velocity way too high
-    this.travel_time = 1.5; //number of seconds a dart should take to travel to wall, adjust to see different speeds
+    this.travel_time = 1.4; //number of seconds a dart should take to travel to wall, adjust to see different speeds
     this.dart_origin = vec3(0, 2, 20); //location where the dart begins its flight path 
     this.darts_thrown = 0;
-    this.max_darts = 5;
+    this.max_darts = 8;
 
     /*Misc*/
     //this.score = 0;
@@ -666,7 +669,7 @@ export class FinalProject extends Scene {
       context,
       program_state,
       model_transform,
-      this.materials.red_flat
+      this.materials.red_wood
     );
 
     // Draw top of the box
@@ -686,7 +689,7 @@ export class FinalProject extends Scene {
       context,
       program_state,
       model_transform,
-      this.materials.red_flat
+      this.materials.red_wood
     );
 
     // Draw bottom of the box
@@ -706,7 +709,7 @@ export class FinalProject extends Scene {
       context,
       program_state,
       model_transform,
-      this.materials.red_flat
+      this.materials.red_wood
     );
 
     // Draw left side of the box
@@ -720,7 +723,7 @@ export class FinalProject extends Scene {
       context,
       program_state,
       model_transform,
-      this.materials.red_flat
+      this.materials.red_wood
     );
 
     // Draw right of the box
@@ -734,11 +737,53 @@ export class FinalProject extends Scene {
       context,
       program_state,
       model_transform,
-      this.materials.red_flat
+      this.materials.red_wood
     );
 
     let n = 30; // Number of pairs of stripes
     let stripe_width = 4.5;
+
+    // The total width covered by the stripes
+    let total_stripe_width = n * stripe_width * 2;
+
+    // Create stripes that go from left to right
+    for (let i = 0; i < n; i++) {
+      // Calculate the position for the white stripe
+      // Shift the starting position to the left edge of the box
+      let white_stripe_position =
+        -total_stripe_width / 2 + i * stripe_width * 2;
+
+      // The red stripe is positioned right next to the white stripe
+      let red_stripe_position = white_stripe_position + stripe_width;
+
+      // Create setup for white stripes
+      let model_transform_white = Mat4.identity()
+        .times(Mat4.translation(white_stripe_position, 0, -19))
+        .times(Mat4.scale(stripe_width / 2, 30, 0));
+
+      // Create setup for red stripes
+      let model_transform_maroon = Mat4.identity()
+        .times(Mat4.translation(red_stripe_position, 0, -19))
+        .times(Mat4.scale(stripe_width / 2, 30, 0));
+
+      // Draw stripes
+      this.shapes.cube.draw(
+        context,
+        program_state,
+        model_transform_white,
+        this.materials.maroon_flat
+      );
+      this.shapes.cube.draw(
+        context,
+        program_state,
+        model_transform_maroon,
+        this.materials.off_white_flat
+      );
+    }
+  }
+  draw_prize_background(context, program_state){
+    let n = 30; // Number of pairs of stripes
+    let stripe_width = 4;
 
     // The total width covered by the stripes
     let total_stripe_width = n * stripe_width * 2;
@@ -1064,6 +1109,7 @@ This also means there's typically a little bit of space between the wall and the
       const light_position = vec4(-10, 10, 20, 1);
       // The parameters of the Light are: position, color, size
       program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 1000)];
+      
 
       const t = program_state.animation_time / 1000,
         dt = program_state.animation_delta_time / 1000;
@@ -1174,6 +1220,7 @@ This also means there's typically a little bit of space between the wall and the
             this.add_mouse_controls(context.canvas);
             this.mouse_enabled_canvases.add(context.canvas);
           }
+          
         //for (let i of [-1, 1]) {                                       // Spin the 3D model shapes as well.
         const model_transform_coin = Mat4.identity().times(Mat4.translation(1.8, -.2, 0))
                                                 .times(Mat4.rotation(- Math.PI / 4, 0, 1, 0))
@@ -1525,6 +1572,7 @@ This also means there's typically a little bit of space between the wall and the
         this.shapes.text.draw(context, program_state, button4_title, this.text_image);
 
         this.shapes.button.draw(context, program_state, button5, this.materials.button);
+        this.draw_prize_background(context, program_state);
 
     
     }
@@ -1619,6 +1667,7 @@ This also means there's typically a little bit of space between the wall and the
             .times(Mat4.scale(.08, .08, .12));
       this.shapes.text.draw(context, program_state, play_again_text, this.text_image);
       this.shapes.button.draw(context, program_state, play_again_button, this.materials.button2);
+      this.draw_prize_background(context, program_state);
       if (this.mouse.anchor){
         //console.log("mouse click!");
             //Calculate ray position from mouse coords
