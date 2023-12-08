@@ -18,7 +18,7 @@ const {
   Shader,
   Matrix,
   Mat4,
-  Light,
+  //Light,
   Shape,
   Material,
   Scene,
@@ -63,20 +63,20 @@ export class FinalProject extends Scene {
     // *** Materials
     this.materials = {
       //Example material
-      test: new Material(new defs.Phong_Shader(), {
+      test: new Material(new Phong_Shader(4), {
         ambient: 0.5,
         diffusivity: 0.6,
         specularity: 0.1,
         color: hex_color("#ffffff"),
       }),
-      floor: new Material(new defs.Phong_Shader(), {
+      floor: new Material(new Phong_Shader(4), {
         ambient: 0.5,
         diffusivity: 0.6,
         specularity: 0.1,
         color: hex_color("#595756"),
       }),
       white: new Material(new defs.Basic_Shader()),
-      dart_metal: new Material(new defs.Textured_Phong(), {
+      dart_metal: new Material(new Textured_Phong(), {
         ambient: 0.5,
         diffusivity: 0,
         specularity: 10,
@@ -86,14 +86,14 @@ export class FinalProject extends Scene {
         ),
       }),
 
-      crosshair: new Material(new defs.Phong_Shader(), {
+      crosshair: new Material(new Phong_Shader(4), {
         diffusivity: 1,
         ambient: 0.8,
         specularity: 0,
         color: hex_color("#eb4934"),
       }),
       // Color of the Box
-      red_flat: new Material(new defs.Phong_Shader(), {
+      red_flat: new Material(new Phong_Shader(4), {
         ambient: 0.4,
         diffusivity: 0.6,
         specularity: 0.5,
@@ -101,7 +101,7 @@ export class FinalProject extends Scene {
       }),
 
       // BG white stripe color
-      off_white_flat: new Material(new defs.Phong_Shader(), {
+      off_white_flat: new Material(new Phong_Shader(4), {
         ambient: 0.9,
         diffusivity: 0.6,
         specularity: 0.5,
@@ -109,49 +109,54 @@ export class FinalProject extends Scene {
       }),
 
       // BG red stripe color
-      maroon_flat: new Material(new defs.Phong_Shader(), {
+      maroon_flat: new Material(new Phong_Shader(4), {
         ambient: 0.9,
         diffusivity: 1.0,
         specularity: 0.5,
         color: hex_color("#660011"),
       }),
-      balloon: new Material(new defs.Phong_Shader(1), {
+      balloon: new Material(new Phong_Shader(4), {
         color: hex_color("#BC13FE"),
         ambient: 0.2,
         diffusivity: 1,
         specularity: 1,
       }),
-      shelf:  new Material(new defs.Phong_Shader(1), {
+      shelf:  new Material(new Phong_Shader(4), {
         color: hex_color("#8B0000"),
         ambient: .2, diffusivity: 1, specularity: .8}),
-    coin: new Material(new defs.Textured_Phong(1), {
+    coin: new Material(new Textured_Phong(1), {
         color: hex_color("#8B8000"),
         ambient: .2, diffusivity: .8, texture: new Texture("assets/money.png")}),
-    comp_cube: new Material(new defs.Textured_Phong(1), {
+    comp_cube: new Material(new Textured_Phong(1), {
         color: hex_color("#000000"),
         ambient: .4, diffusivity: .8, specularity: 1, texture: new Texture("assets/companion-cube.png")}),
-    rabbit: new Material(new defs.Phong_Shader(1), {
+    rabbit: new Material(new Phong_Shader(1), {
         color: hex_color("#FFB6C1"),
         ambient: .2, diffusivity: 1, specularity: .8}),
-    globe: new Material(new defs.Textured_Phong(1), {
+    globe: new Material(new Textured_Phong(1), {
         color: hex_color("#000000"),
         ambient: .4, diffusivity: .8, specularity: 1, texture: new Texture("assets/earth.gif")}),
-    ice_cream: new Material(new defs.Textured_Phong(1), {
+    ice_cream: new Material(new Textured_Phong(1), {
         color: hex_color("#5B3C1E"),
         ambient: .4, diffusivity: 1, specularity: .2, texture: new Texture("assets/fixed_waffle.png")}),
-    cream: new Material(new defs.Textured_Phong(1), {
+    cream: new Material(new Textured_Phong(1), {
         color: hex_color("#FFFDD0"),
         ambient: .2, diffusivity: 1, specularity: .2, texture: new Texture("assets/ice.png")}),
-    red_wood: new Material(new defs.Textured_Phong(1), {
+    red_wood: new Material(new Textured_Phong(4), {
           color: hex_color("#ad0c0c"),
           ambient: .28, diffusivity: 0.8, specularity: .2, texture: new Texture("assets/black-striped-cardboard-texture.jpg")}),
-    button: new Material(new defs.Phong_Shader(1), {
+    button: new Material(new Phong_Shader(1), {
         color: hex_color("#051650"),
         ambient: .2, diffusivity: 1, specularity: .8}),
     
-    button2: new Material(new defs.Phong_Shader(1), {
+    button2: new Material(new Phong_Shader(1), {
       color: hex_color("#ffbf00"),
       ambient: .2, diffusivity: 1, specularity: .8}),
+    
+    logo: new Material(new Textured_Phong(3), {
+      color: hex_color("#000000"),  
+      ambient: 1, diffusivity: 1, specularity: 1, texture: new Texture("assets/logo.png")}
+    ),
    };
     //Note: All height/width/depth vals are half of the real height/width/depth, similar to a radius
     this.collision_cubes = { //Named collision objects
@@ -313,6 +318,9 @@ export class FinalProject extends Scene {
     this.current_scene = GAME;
     this.balloon_sound = new Audio("assets/537897__belanhud__balloon-pop-one.mp3");
     this.balloon_sound.preload="auto";
+    this.frame = 0; 
+    this.random = 0; 
+    this.counter = 0; 
   }
 
   add_mouse_controls(canvas) {
@@ -435,13 +443,16 @@ export class FinalProject extends Scene {
   /*Checks whether given object collides with any balloons, pops those balloons=*/
   perform_dart_balloon_collisions(object) {
     for (var i = 0; i < this.balloons.length; i++) {
-      //console.log("balloon:", this.balloons[i]);
+      console.log("balloon:", this.balloons[i]);
       if (CheckCollisionCubeCube(this.balloons[i], object)) {
         if (!this.balloons[i].popped)
           this.balloon_sound.play();
 
         this.balloons[i].popped = true;
         score += this.balloons[i].points;
+        if (this.balloons[i].lit) {
+          score += this.balloons[i].points;
+        }
         this.balloons[i].points =0; //set points to 0 after it's first added so it won't get re-added every frame a collision is detected
         //console.log("balloon pop!");
       }
@@ -861,9 +872,11 @@ export class FinalProject extends Scene {
           height: 34 * 0.1,
           depth: 28 * 0.1,
           popped: false,
+          lit: false,
           points: 10,
         });
       }
+      this.balloons[0].lit = true;
       //console.log(this.balloons);
     }
 
@@ -911,6 +924,7 @@ export class FinalProject extends Scene {
           height: 30 * 0.1,
           depth: 24 * 0.1,
           popped: false,
+          lit: false,
           points: 30,
         });
       }
@@ -977,6 +991,7 @@ export class FinalProject extends Scene {
         height: 30 * 0.1,
         depth: 24 * 0.1,
         popped: false,
+        lit: false,
         points: 100,
       });
     }
@@ -1137,18 +1152,100 @@ This also means there's typically a little bit of space between the wall and the
       const t = program_state.animation_time / 1000,
         dt = program_state.animation_delta_time / 1000;
       //console.log(t);
+
+      const light_1_position = vec4(-10, -10, 10, 0);
+      var light_2_position = vec4(0, 0 , 0, 0); 
+      var light_2_direction = vec4(0, 0 , 0, 0); 
+      var light_3_position = vec4(0, 0, 0, 0); 
+      var light_3_direction = vec4(0, 0, 0, 0); 
+      var light_4_position = vec4(0, 0, 0, 0); 
+      var light_4_direction = vec4(0, 0, 0, 0); 
+      
+      
+      if (!this.first_frame) {
+        const cam = this.initial_camera_location[3];
+        this.frame += 1;
+        if (this.frame % 700 === 0) {
+            this.balloons[this.random].lit = false; 
+            this.random = Math.floor(Math.random() * 10); 
+            this.balloons[this.random].lit = true; 
+        } 
+        light_2_position = vec4(this.balloons[this.random].position[0], this.balloons[this.random].position[1], cam[2] + 5, cam[3]);
+        light_2_direction = vec4(0, 0, 1, 1);
+
+        const oscillation = 0.5 * Math.sin(0.7 * Math.PI * t); 
+        light_3_position = vec4(cam[0] - 25, cam[1] - 30, cam[2] + 10, cam[3]); 
+        light_3_direction = vec4(oscillation, -1, 1, 1); 
+
+        light_4_position = vec4(cam[0] + 25, cam[1] - 30, cam[2] + 10, cam[3]); 
+        light_4_direction = vec4(-oscillation, -1, 1, 1); 
+      }
+      program_state.lights = [
+        new Light(
+          light_1_position,
+          color(1, 1, 1, 1),
+          1000,
+          light_1_position,
+          30
+        )
+      ];
+      
+      program_state.lights.push(
+        new Light(
+          light_3_position, 
+          color(1, 1, 1, 1), 
+          500, 
+          light_3_direction, 
+          25
+        )
+      )
+      
+      program_state.lights.push(
+        new Light(
+          light_4_position, 
+          color(1, 1, 1, 1), 
+          500, 
+          light_4_direction, 
+          25
+        )
+      )
+      program_state.lights.push(
+        new Light(
+          light_2_position, 
+          color(1, 1, 1, 1), 
+          10000, 
+          light_2_direction, 
+          12
+        )
+      )
         
       let model_transform = Mat4.identity();
        
       if (!this.game_started) {
+        this.counter += 1;
         const start_screen_text_1 = Mat4.identity().times(Mat4.translation(-8.5, -5, 0))
           .times(Mat4.scale(1, 1, 1));
         this.shapes.text.set_string("PRESS [S] TO", context.context);
-        this.shapes.text.draw(context, program_state, start_screen_text_1, this.text_image);
+        if (this.counter % 200 > 50) {
+          this.shapes.text.draw(context, program_state, start_screen_text_1, this.text_image);
+
+        }
         const start_screen_text_2 = Mat4.identity().times(Mat4.translation(-9, -7, 0))
           .times(Mat4.scale(1, 1, 1));
         this.shapes.text.set_string("    START", context.context);
-        this.shapes.text.draw(context, program_state, start_screen_text_2, this.text_image);
+        if (this.counter % 200 > 50) {
+          this.shapes.text.draw(context, program_state, start_screen_text_2, this.text_image);
+        }
+
+        let model_transform = Mat4.identity()
+          .times(Mat4.translation(0, 4, -10)).times(Mat4.scale(38, 25, 1))
+
+        this.shapes.cube.draw(
+          context,
+          program_state,
+          model_transform,
+          this.materials.logo
+    );
       }
       else {
         const score_text = Mat4.identity().times(Mat4.scale(0.7,0.7,1)).times(Mat4.translation(-30.5, 21.5, 0));
@@ -1257,7 +1354,8 @@ This also means there's typically a little bit of space between the wall and the
                 );
               }
         const light_position = vec4(0, 5, 5, 1);
-        program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 1000)];
+        const light_direction = vec4(0, 0, 1, 1); 
+        program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 1000, light_direction, 180)];
 
         const t = program_state.animation_time / 1000
         if (!this.mouse_enabled_canvases.has(context.canvas)) {
@@ -1634,7 +1732,8 @@ This also means there's typically a little bit of space between the wall and the
         );
       }
       const light_position = vec4(0, 5, 5, 1);
-      program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 1000)];
+      const light_direction = vec4(0, 0, 1, 1); 
+      program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 1000, light_direction, 180)];
 
       const t = program_state.animation_time / 1000;
       const model_transform_coin = Mat4.identity().times(Mat4.translation(1.8, -.2, 0))
@@ -1761,6 +1860,249 @@ This also means there's typically a little bit of space between the wall and the
       }
     }
   } 
+}
+
+class Phong_Shader extends Shader {
+  // **Phong_Shader** is a subclass of Shader, which stores and manages a GPU program.
+  // Graphic cards prior to year 2000 had shaders like this one hard-coded into them
+  // instead of customizable shaders.  "Phong-Blinn" Shading here is a process of
+  // determining brightness of pixels via vector math.  It compares the normal vector
+  // at that pixel with the vectors toward the camera and light sources.
+
+
+  constructor(num_lights = 4) {
+      super();
+      this.num_lights = num_lights;
+  }
+
+  shared_glsl_code() {
+      // ********* SHARED CODE, INCLUDED IN BOTH SHADERS *********
+      return ` precision mediump float;
+          const int N_LIGHTS = ` + this.num_lights + `;
+          uniform float ambient, diffusivity, specularity, smoothness;
+          uniform vec4 light_positions_or_vectors[N_LIGHTS], light_colors[N_LIGHTS];
+          uniform float light_attenuation_factors[N_LIGHTS];
+          uniform vec4 light_directions[N_LIGHTS];  // Add this line for light directions
+          uniform float light_angles[N_LIGHTS];
+          uniform vec4 shape_color;
+          uniform vec3 squared_scale, camera_center;
+  
+          // Specifier "varying" means a variable's final value will be passed from the vertex shader
+          // on to the next phase (fragment shader), then interpolated per-fragment, weighted by the
+          // pixel fragment's proximity to each of the 3 vertices (barycentric interpolation).
+          varying vec3 N, vertex_worldspace;
+          // ***** PHONG SHADING HAPPENS HERE: *****                                       
+          vec3 phong_model_lights( vec3 N, vec3 vertex_worldspace ){                                        
+              // phong_model_lights():  Add up the lights' contributions.
+              vec3 E = normalize( camera_center - vertex_worldspace );
+              vec3 result = vec3( 0.0 );
+              for(int i = 0; i < N_LIGHTS; i++){
+                  // Lights store homogeneous coords - either a position or vector.  If w is 0, the 
+                  // light will appear directional (uniform direction from all points), and we 
+                  // simply obtain a vector towards the light by directly using the stored value.
+                  // Otherwise if w is 1 it will appear as a point light -- compute the vector to 
+                  // the point light's location from the current surface point.  In either case, 
+                  // fade (attenuate) the light as the vector needed to reach it gets longer.  
+                  vec3 surface_to_light_vector = light_positions_or_vectors[i].xyz - 
+                                                 light_positions_or_vectors[i].w * vertex_worldspace;                                             
+                  float distance_to_light = length( surface_to_light_vector );
+  
+                  vec3 L = normalize( surface_to_light_vector );
+                  vec3 H = normalize( L + E );
+                  // Compute the diffuse and specular components from the Phong
+                  // Reflection Model, using Blinn's "halfway vector" method:
+                  float diffuse  =      max( dot( N, L ), 0.0 );
+                  float specular = pow( max( dot( N, H ), 0.0 ), smoothness );
+                  float attenuation = 1.0 / (1.0 + light_attenuation_factors[i] * distance_to_light * distance_to_light );
+                  
+                  vec3 light_contribution = shape_color.xyz * light_colors[i].xyz * diffusivity * diffuse
+                                                            + light_colors[i].xyz * specularity * specular;
+                  vec3 D = normalize(light_directions[i].xyz);
+                  float cos_angle = abs(dot(L, D));
+                  float cos_spotlight_cutoff = cos(radians(light_angles[i])); 
+
+                  float spot_falloff = smoothstep(cos_spotlight_cutoff - 0.015, cos_spotlight_cutoff + 0.015, cos_angle); 
+
+                  if (i > 0) {
+                    result += attenuation * light_contribution * spot_falloff; 
+                  }
+                  else {
+                    result += attenuation * light_contribution; 
+                  }
+                }
+              return result;
+            } `;
+  }
+
+  vertex_glsl_code() {
+      // ********* VERTEX SHADER *********
+      return this.shared_glsl_code() + `
+          attribute vec3 position, normal;                            
+          // Position is expressed in object coordinates.
+          
+          uniform mat4 model_transform;
+          uniform mat4 projection_camera_model_transform;
+  
+          void main(){                                                                   
+              // The vertex's final resting place (in NDCS):
+              gl_Position = projection_camera_model_transform * vec4( position, 1.0 );
+              // The final normal vector in screen space.
+              N = normalize( mat3( model_transform ) * normal / squared_scale);
+              vertex_worldspace = ( model_transform * vec4( position, 1.0 ) ).xyz;
+            } `;
+  }
+
+  fragment_glsl_code() {
+      // ********* FRAGMENT SHADER *********
+      // A fragment is a pixel that's overlapped by the current triangle.
+      // Fragments affect the final image or get discarded due to depth.
+      return this.shared_glsl_code() + `
+          void main(){                                                           
+              // Compute an initial (ambient) color:
+              gl_FragColor = vec4( shape_color.xyz * ambient, shape_color.w );
+              // Compute the final color with contributions from lights:
+              gl_FragColor.xyz += phong_model_lights( normalize( N ), vertex_worldspace );
+            } `;
+  }
+
+  send_material(gl, gpu, material) {
+      // send_material(): Send the desired shape-wide material qualities to the
+      // graphics card, where they will tweak the Phong lighting formula.
+      gl.uniform4fv(gpu.shape_color, material.color);
+      gl.uniform1f(gpu.ambient, material.ambient);
+      gl.uniform1f(gpu.diffusivity, material.diffusivity);
+      gl.uniform1f(gpu.specularity, material.specularity);
+      gl.uniform1f(gpu.smoothness, material.smoothness);
+  }
+
+  send_gpu_state(gl, gpu, gpu_state, model_transform) {
+      // send_gpu_state():  Send the state of our whole drawing context to the GPU.
+      const O = vec4(0, 0, 0, 1), camera_center = gpu_state.camera_transform.times(O).to3();
+      gl.uniform3fv(gpu.camera_center, camera_center);
+      // Use the squared scale trick from "Eric's blog" instead of inverse transpose matrix:
+      const squared_scale = model_transform.reduce(
+          (acc, r) => {
+              return acc.plus(vec4(...r).times_pairwise(r))
+          }, vec4(0, 0, 0, 0)).to3();
+      gl.uniform3fv(gpu.squared_scale, squared_scale);
+      // Send the current matrices to the shader.  Go ahead and pre-compute
+      // the products we'll need of the of the three special matrices and just
+      // cache and send those.  They will be the same throughout this draw
+      // call, and thus across each instance of the vertex shader.
+      // Transpose them since the GPU expects matrices as column-major arrays.
+      const PCM = gpu_state.projection_transform.times(gpu_state.camera_inverse).times(model_transform);
+      gl.uniformMatrix4fv(gpu.model_transform, false, Matrix.flatten_2D_to_1D(model_transform.transposed()));
+      gl.uniformMatrix4fv(gpu.projection_camera_model_transform, false, Matrix.flatten_2D_to_1D(PCM.transposed()));
+
+      // Omitting lights will show only the material color, scaled by the ambient term:
+      if (!gpu_state.lights.length)
+          return;
+
+      const light_positions_flattened = [];
+      const light_colors_flattened = [];
+      const light_directions_flattened = [];
+      for (let i = 0; i < 4 * gpu_state.lights.length; i++) {
+        light_positions_flattened.push(gpu_state.lights[Math.floor(i / 4)].position[i % 4]);
+        light_colors_flattened.push(gpu_state.lights[Math.floor(i / 4)].color[i % 4]);
+        light_directions_flattened.push(gpu_state.lights[Math.floor(i / 4)].direction[i % 4]);
+      }
+      gl.uniform4fv(gpu.light_positions_or_vectors, light_positions_flattened);
+      gl.uniform4fv(gpu.light_colors, light_colors_flattened);
+      gl.uniform1fv(gpu.light_attenuation_factors, gpu_state.lights.map(l => l.attenuation));
+      gl.uniform4fv(gpu.light_directions, light_directions_flattened); 
+      gl.uniform1fv(gpu.light_angles, gpu_state.lights.map(l => l.angle)); 
+  }
+
+  update_GPU(context, gpu_addresses, gpu_state, model_transform, material) {
+      // update_GPU(): Define how to synchronize our JavaScript's variables to the GPU's.  This is where the shader
+      // recieves ALL of its inputs.  Every value the GPU wants is divided into two categories:  Values that belong
+      // to individual objects being drawn (which we call "Material") and values belonging to the whole scene or
+      // program (which we call the "Program_State").  Send both a material and a program state to the shaders
+      // within this function, one data field at a time, to fully initialize the shader for a draw.
+
+      // Fill in any missing fields in the Material object with custom defaults for this shader:
+      const defaults = {color: color(0, 0, 0, 1), ambient: 0, diffusivity: 1, specularity: 1, smoothness: 40};
+      material = Object.assign({}, defaults, material);
+
+      this.send_material(context, gpu_addresses, material);
+      this.send_gpu_state(context, gpu_addresses, gpu_state, model_transform);
+  }
+}
+
+class Textured_Phong extends Phong_Shader {
+  // **Textured_Phong** is a Phong Shader extended to addditionally decal a
+  // texture image over the drawn shape, lined up according to the texture
+  // coordinates that are stored at each shape vertex.
+  vertex_glsl_code() {
+      // ********* VERTEX SHADER *********
+      return this.shared_glsl_code() + `
+          varying vec2 f_tex_coord;
+          attribute vec3 position, normal;                            
+          // Position is expressed in object coordinates.
+          attribute vec2 texture_coord;
+          
+          uniform mat4 model_transform;
+          uniform mat4 projection_camera_model_transform;
+  
+          void main(){                                                                   
+              // The vertex's final resting place (in NDCS):
+              gl_Position = projection_camera_model_transform * vec4( position, 1.0 );
+              // The final normal vector in screen space.
+              N = normalize( mat3( model_transform ) * normal / squared_scale);
+              vertex_worldspace = ( model_transform * vec4( position, 1.0 ) ).xyz;
+              // Turn the per-vertex texture coordinate into an interpolated variable.
+              f_tex_coord = texture_coord;
+            } `;
+  }
+
+  fragment_glsl_code() {
+      // ********* FRAGMENT SHADER *********
+      // A fragment is a pixel that's overlapped by the current triangle.
+      // Fragments affect the final image or get discarded due to depth.
+      return this.shared_glsl_code() + `
+          varying vec2 f_tex_coord;
+          uniform sampler2D texture;
+  
+          void main(){
+              // Sample the texture image in the correct place:
+              vec4 tex_color = texture2D( texture, f_tex_coord );
+              if( tex_color.w < .01 ) discard;
+                                                                       // Compute an initial (ambient) color:
+              gl_FragColor = vec4( ( tex_color.xyz + shape_color.xyz ) * ambient, shape_color.w * tex_color.w ); 
+                                                                       // Compute the final color with contributions from lights:
+              gl_FragColor.xyz += phong_model_lights( normalize( N ), vertex_worldspace );
+            } `;
+  }
+
+  update_GPU(context, gpu_addresses, gpu_state, model_transform, material) {
+      // update_GPU(): Add a little more to the base class's version of this method.
+      super.update_GPU(context, gpu_addresses, gpu_state, model_transform, material);
+
+      if (material.texture && material.texture.ready) {
+          // Select texture unit 0 for the fragment shader Sampler2D uniform called "texture":
+          context.uniform1i(gpu_addresses.texture, 0);
+          // For this draw, use the texture image from correct the GPU buffer:
+          material.texture.activate(context);
+      }
+  }
+}
+
+class Light {
+  // **Light** stores the properties of one light in a scene.  Contains a coordinate and a
+  // color (each are 4x1 Vectors) as well as one size scalar.
+  // The coordinate is homogeneous, and so is either a point or a vector.  Use w=0 for a
+  // vector (directional) light, and w=1 for a point light / spotlight.
+  // For spotlights, a light also needs a "size" factor for how quickly the brightness
+  // should attenuate (reduce) as distance from the spotlight increases.
+  constructor(position, color, size, direction, angle) {
+      Object.assign(this, {
+          position,
+          color,
+          direction, 
+          angle, 
+          attenuation: 1 / size
+      });
+  }
 }
 
 
