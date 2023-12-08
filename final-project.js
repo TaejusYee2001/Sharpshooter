@@ -142,6 +142,9 @@ export class FinalProject extends Scene {
     cream: new Material(new defs.Textured_Phong(1), {
         color: hex_color("#FFFDD0"),
         ambient: .2, diffusivity: 1, specularity: .2, texture: new Texture("assets/ice.png")}),
+    red_wood: new Material(new defs.Textured_Phong(1), {
+          color: hex_color("#ad0c0c"),
+          ambient: .28, diffusivity: 0.8, specularity: .2, texture: new Texture("assets/black-striped-cardboard-texture.jpg")}),
     button: new Material(new defs.Phong_Shader(1), {
         color: hex_color("#051650"),
         ambient: .2, diffusivity: 1, specularity: .8}),
@@ -666,7 +669,7 @@ export class FinalProject extends Scene {
       context,
       program_state,
       model_transform,
-      this.materials.red_flat
+      this.materials.red_wood
     );
 
     // Draw top of the box
@@ -686,7 +689,7 @@ export class FinalProject extends Scene {
       context,
       program_state,
       model_transform,
-      this.materials.red_flat
+      this.materials.red_wood
     );
 
     // Draw bottom of the box
@@ -706,7 +709,7 @@ export class FinalProject extends Scene {
       context,
       program_state,
       model_transform,
-      this.materials.red_flat
+      this.materials.red_wood
     );
 
     // Draw left side of the box
@@ -720,7 +723,7 @@ export class FinalProject extends Scene {
       context,
       program_state,
       model_transform,
-      this.materials.red_flat
+      this.materials.red_wood
     );
 
     // Draw right of the box
@@ -734,7 +737,7 @@ export class FinalProject extends Scene {
       context,
       program_state,
       model_transform,
-      this.materials.red_flat
+      this.materials.red_wood
     );
 
     let n = 30; // Number of pairs of stripes
