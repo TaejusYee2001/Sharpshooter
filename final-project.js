@@ -305,7 +305,8 @@ export class FinalProject extends Scene {
     this.refill_darts=false;
     this.count = 0;
     this.current_scene = GAME;
-
+    this.balloon_sound = new Audio("assets/537897__belanhud__balloon-pop-one.mp3");
+    this.balloon_sound.preload="auto";
   }
 
   add_mouse_controls(canvas) {
@@ -419,6 +420,9 @@ export class FinalProject extends Scene {
     for (var i = 0; i < this.balloons.length; i++) {
       //console.log("balloon:", this.balloons[i]);
       if (CheckCollisionCubeCube(this.balloons[i], object)) {
+        if (!this.balloons[i].popped)
+          this.balloon_sound.play();
+
         this.balloons[i].popped = true;
         score += this.balloons[i].points;
         this.balloons[i].points =0; //set points to 0 after it's first added so it won't get re-added every frame a collision is detected
