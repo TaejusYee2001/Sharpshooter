@@ -302,6 +302,9 @@ export class FinalProject extends Scene {
     this.darts_thrown = 0;
     this.max_darts = 8;
 
+    /*Game Start*/
+    this.game_started = false; 
+
     /*Misc*/
     //this.score = 0;
     this.first_frame = true;
@@ -325,18 +328,29 @@ export class FinalProject extends Scene {
     //Note that anchor here records the mouse position at the time of the event
     document.addEventListener("mouseup", (e) => {
       e.preventDefault();
-      this.mouse.anchor = undefined;
-      this.mouse_up =
-        this.mouse_click && this.obj_picked ? mouse_position(e) : undefined;
+      if (this.game_started) {
+        this.mouse.anchor = undefined;
+        this.mouse_up =
+          this.mouse_click && this.obj_picked ? mouse_position(e) : undefined;
+      }
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "s") {
+        // Check if the space key is pressed
+        this.game_started = true;
+        // Add any additional logic you want to perform when the game starts
+      }
     });
     canvas.addEventListener("mousedown", (e) => {
       //this.follow_mouse = false; //uncomment if crosshair should be put down on click
-      this.obj_picked = false;
-      this.mouse_click = !this.mouse_click;
-      this.mouse.anchor = mouse_position(e);
-      this.fire_dart = this.dart_ready ? true : false;
-      if (this.obj_picked_pos)
-        this.objects.crosshair.position = this.obj_picked_pos;
+      if (this.game_started) {
+        this.obj_picked = false;
+        this.mouse_click = !this.mouse_click;
+        this.mouse.anchor = mouse_position(e);
+        this.fire_dart = this.dart_ready ? true : false;
+        if (this.obj_picked_pos)
+          this.objects.crosshair.position = this.obj_picked_pos;
+      }
     });
     canvas.addEventListener("mousemove", (e) => {
       e.preventDefault();
@@ -371,7 +385,7 @@ export class FinalProject extends Scene {
         box.textContent = "Out of darts!" ;
     });
     this.new_line();
-    this.key_triggered_button("go up", ["Control", "u"], () => this.attached = () => this.go_up);
+    //this.key_triggered_button("go up", ["Control", "u"], () => this.attached = () => this.go_up);
   }
 
   /*Calculations*/
@@ -1066,6 +1080,15 @@ export class FinalProject extends Scene {
     );
   }
 
+  draw_dart_inventory(context, program_state, model_transform) {
+    let inventory_transform = model_transform; 
+    inventory_transform = inventory_transform.times(Mat4.translation(-20, -11, 0));
+    for (var i = 0; i < this.max_darts - this.darts_thrown; i++) {
+      inventory_transform = inventory_transform.times(Mat4.translation(0, 1, 0))
+      this.shapes.dart.draw(context, program_state, inventory_transform, this.materials.dart_metal); 
+    }
+  }
+
   /*Display*/
   /* 
 Note: When the dart's velocity is too high (above 20 or so) the collision does not work because the coordinates change too quickly -
@@ -1116,12 +1139,32 @@ This also means there's typically a little bit of space between the wall and the
       //console.log(t);
         
       let model_transform = Mat4.identity();
+       
+      if (!this.game_started) {
+        const start_screen_text_1 = Mat4.identity().times(Mat4.translation(-8.5, -5, 0))
+          .times(Mat4.scale(1, 1, 1));
+        this.shapes.text.set_string("PRESS [S] TO", context.context);
+        this.shapes.text.draw(context, program_state, start_screen_text_1, this.text_image);
+        const start_screen_text_2 = Mat4.identity().times(Mat4.translation(-9, -7, 0))
+          .times(Mat4.scale(1, 1, 1));
+        this.shapes.text.set_string("    START", context.context);
+        this.shapes.text.draw(context, program_state, start_screen_text_2, this.text_image);
+      }
+      else {
+        const score_text = Mat4.identity().times(Mat4.scale(0.7,0.7,1)).times(Mat4.translation(-30.5, 21.5, 0));
+        const score_string = "SCORE: "+score; 
+        this.shapes.text.set_string(score_string, context.context); 
+        this.shapes.text.draw(context, program_state, score_text, this.text_image); 
+      }
 
       /*Drawing*/
       this.draw_background(context, program_state, model_transform, t);
       this.draw_balloons(context, program_state, t);
       //this.draw_floor(context, program_state, model_transform);
       this.draw_wall(context, program_state, model_transform);
+      if (this.game_started) {
+        this.draw_dart_inventory(context, program_state, model_transform); 
+      }
       
       
       /*Set up array of darts*/
@@ -1148,6 +1191,7 @@ This also means there's typically a little bit of space between the wall and the
         this.refill_darts=false;
       }
 
+      
       //Draw crosshair, only when they still can throw darts
       if (this.darts_thrown < this.max_darts) 
         this.draw_crosshair(context, program_state, model_transform, t);
@@ -1156,7 +1200,7 @@ This also means there's typically a little bit of space between the wall and the
       this.draw_darts(context, program_state, model_transform, t);
 
       //move camera
-      this.go_up = Mat4.inverse(this.initial_camera_location.times(Mat4.translation(0, 50, 0)));
+      //this.go_up = Mat4.inverse(this.initial_camera_location.times(Mat4.translation(0, 50, 0)));
 
       if (this.attached != undefined) {
         program_state.set_camera(this.attached().map((x,i) =>
@@ -1189,7 +1233,7 @@ This also means there's typically a little bit of space between the wall and the
                 plane_normal,
                 d
             );    
-            console.log(mouse_pos);
+            //console.log(mouse_pos);
             if(CheckCollisionPointRectangle(mouse_pos, this.prize_screen_button)){
               this.mouse.anchor=undefined;
               this.current_scene=PRIZE;
@@ -1710,23 +1754,14 @@ This also means there's typically a little bit of space between the wall and the
               this.darts.length=0;
               this.dart_ready=true;
               this.refill_darts = true;
+              this.game_started = false; 
               score=0;
               this.current_scene = GAME;
-
-
             } 
-
       }
-      
-
-
-        
-
-        
-
-
     }
-  }
-  
+  } 
 }
+
+
 
