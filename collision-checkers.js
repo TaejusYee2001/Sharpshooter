@@ -90,4 +90,11 @@ export function CheckCollisionRayPlane(ray, ray_origin, n, d) {
   
     return ray_origin.plus(ray.times(t)); //This will be a 3-coord vector
   }
-  
+
+  /*Checks if a given point (3-vec position) is inside a given rectangle; ignores z data*/
+  export function CheckCollisionPointRectangle(point, rectangle){
+    //point[0] is x, point[1] is y 
+    let collision_X = Boolean(((rectangle.position[0]-rectangle.width) <= point[0]) && (point[0] <= (rectangle.position[0]+rectangle.width)));
+    let collision_Y = Boolean(((rectangle.position[1]-rectangle.height) <= point[1]) && (point[1] <= (rectangle.position[1]+rectangle.height)));
+    return collision_X && collision_Y;
+  }

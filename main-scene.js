@@ -2,12 +2,12 @@ import {defs, tiny} from './examples/common.js';
 import {Axes_Viewer, Axes_Viewer_Test_Scene} from "./examples/axes-viewer.js"
 import {Collision_Demo, Inertia_Demo} from "./examples/collisions-demo.js"
 import {Many_Lights_Demo} from "./examples/many-lights-demo.js"
-import {Balloons} from "./balloons.js"
 import {Scene_To_Texture_Demo} from "./examples/scene-to-texture-demo.js"
 import {Surfaces_Demo} from "./examples/surfaces-demo.js"
 import {Text_Demo} from "./examples/text-demo.js"
 import {Transforms_Sandbox} from "./examples/transforms-sandbox.js"
 import {FinalProject} from "./final-project.js";
+//import {RenderObjsMtls} from "./render-objs-mtls.js";
 
 // Pull these names into this module's scope for convenience:
 const {
@@ -29,21 +29,20 @@ Object.assign(defs,
     {Axes_Viewer, Axes_Viewer_Test_Scene},
     {Inertia_Demo, Collision_Demo},
     {Many_Lights_Demo},
-    {Balloons},
+    
     {Scene_To_Texture_Demo},
     {Surfaces_Demo},
     {Text_Demo},
     {Transforms_Sandbox},
-    {FinalProject}, 
-    
+    {FinalProject},
+   
 );
 
 // ******************** End extra step
 
 // (Can define Main_Scene's class here)
+var Main_Scene = FinalProject;
 
-
-const Main_Scene =FinalProject;
 const Additional_Scenes = []; //Add Movement_Controls to the brackets if you want to easily move the camera around the screen during testing/development
 
 
