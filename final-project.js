@@ -316,8 +316,17 @@ export class FinalProject extends Scene {
     this.refill_darts=false;
     this.count = 0;
     this.current_scene = GAME;
+    
     this.balloon_sound = new Audio("assets/537897__belanhud__balloon-pop-one.mp3");
     this.balloon_sound.preload="auto";
+    this.balloon_sound.volume=0.7;
+    this.soundtrack = new Audio("assets/1900s-edison-phonograph-playing-music.wav");
+    this.soundtrack.preload="auto";
+    this.soundtrack.loop=true;
+    this.soundtrack.volume=0.1;
+    this.cash_reg_sound = new Audio("assets/cash_reg_sound.mp3");
+    this.cash_reg_sound.preload="auto";
+    this.cash_reg_sound.volume=0.7;
     this.frame = 0; 
     this.random = 0; 
     this.counter = 0; 
@@ -347,6 +356,7 @@ export class FinalProject extends Scene {
         // Check if the space key is pressed
         this.game_started = true;
         // Add any additional logic you want to perform when the game starts
+        this.soundtrack.play();
       }
     });
     canvas.addEventListener("mousedown", (e) => {
@@ -1535,6 +1545,7 @@ This also means there's typically a little bit of space between the wall and the
                     if (this.purchase_buttons.globe.points <= score){
                         score -= this.purchase_buttons.globe.points;
                         this.purchase_buttons.globe.bought = true;
+                        this.cash_reg_sound.play();
                     }
                 }
                 
@@ -1546,7 +1557,7 @@ This also means there's typically a little bit of space between the wall and the
                     if (this.purchase_buttons.ice_cream.points <= score){
                         score -= this.purchase_buttons.ice_cream.points;
                         this.purchase_buttons.ice_cream.bought = true;
-
+                        this.cash_reg_sound.play();
                     }
 
                 }
@@ -1556,7 +1567,9 @@ This also means there's typically a little bit of space between the wall and the
                if (!this.purchase_buttons.cool_cube.bought){
                     if (this.purchase_buttons.cool_cube.points <= score){
                         score -= this.purchase_buttons.cool_cube.points;
-                        this.purchase_buttons.cool_cube.bought = true;}
+                        this.purchase_buttons.cool_cube.bought = true;
+                        this.cash_reg_sound.play();
+                      }
                }
                 
             }
@@ -1566,7 +1579,7 @@ This also means there's typically a little bit of space between the wall and the
                     if (this.purchase_buttons.coin.points <=score){
                         score -= this.purchase_buttons.coin.points;
                         this.purchase_buttons.coin.bought = true;
-
+                        this.cash_reg_sound.play();
                     }
                 }
             }
