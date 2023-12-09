@@ -1,47 +1,35 @@
 # CS174A-Sharpshooter
 
-## Beginning
-To clone the project on your machine, run in the folder of your choice:
+## Goal:
 
-```
-git clone https://github.com/CS174A-Group/Sharpshooter.git
-```
+- Get as many points as you can by aiming and hitting balloons with darts
 
-Then make sure to cd into the CS174A-Sharpshooter folder.
-Then, replacing yourname with your name,  run:
+## Features:
 
-```
-git branch yourname
-git checkout yourname
-```
+- At the start screen, press [s] key to start the game.
+- You will see a bunch of moving balloons
+- Music will play, press [p] to toggle it
+- Use your mouse to click on the game screen and throw your dart at that point
+- A crosshair helps you aim
+- Dart moves in a parabolic fashion, and it might or might not miss a moving balloon, so
+  time your throw well!
+- If your dart hits a balloon, the balloon will pop (collision detection)
+- Some balloons move faster than others, and they give you more points
+- A spotlight highlights different balloons every few seconds. If you hit a balloon while it’s
+  spotlighted, it gets you more points!
+- View how many points you have gotten so far below the game screen and in the top
+  corner
+- View how many darts you have left in the left side of the screen
 
-To double check you're on your new branch, run:
+## End of Game:
 
-```
-git branch -v
-```
-You should see a * next to the name of your new branch. 
-
-## Committing/Pushing your branch 
-Once you've made changes, there are a few steps before pushing your branch.
-
-To check which files are currently staged to be committed, run:
-```
-git status
-```
-This will show the files that have changes that need to be committed. 
-Use 'git add' to add the files that you want to push to main.
-Typically you will just run 'git add .' to add all files in the current directory.
-
-Then make your commit with a message saying what features you adjusted/added:
-```
-git commit -m "commit message"
-```
-
-Then you can push your commit to main with:
-```
-//replace mybranch with the name of your branch
-git push origin mybranch  
-```
-
-Once you do this, you should be able to see your new branch commit on the github. 
+- After all the darts have been thrown, click “GO TO PRIZES” to view the possible prizes
+  you can buy
+- Click on the buttons below each prize to purchase that prize
+- Prizes that are unavailable will display text saying so
+- Prizes that are purchased will display that they are purchased
+- After you’re done buying prizes, click the “DONE” button
+- This brings you to a “GAME OVER” screen that also displays the prizes you have
+  bought
+- Congratulations! Click “PLAY AGAIN” if you would like to throw more darts and see if
+  you can get a better score to win more prizes
