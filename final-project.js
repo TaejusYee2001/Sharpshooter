@@ -324,6 +324,7 @@ export class FinalProject extends Scene {
     this.soundtrack.preload="auto";
     this.soundtrack.loop=true;
     this.soundtrack.volume=0.1;
+    this.soundtrack_paused = false;
     this.cash_reg_sound = new Audio("assets/cash_reg_sound.mp3");
     this.cash_reg_sound.preload="auto";
     this.cash_reg_sound.volume=0.7;
@@ -357,6 +358,16 @@ export class FinalProject extends Scene {
         this.game_started = true;
         // Add any additional logic you want to perform when the game starts
         this.soundtrack.play();
+      }
+      else if (e.key =="p"){
+        if (this.soundtrack_paused){
+          this.soundtrack.play();
+          this.soundtrack_paused = false;
+        }
+        else{
+          this.soundtrack.pause();
+          this.soundtrack_paused = true;
+        }
       }
     });
     canvas.addEventListener("mousedown", (e) => {
@@ -402,8 +413,11 @@ export class FinalProject extends Scene {
       else
         box.textContent = "Out of darts!" ;
     });
-    this.new_line();
-    //this.key_triggered_button("go up", ["Control", "u"], () => this.attached = () => this.go_up);
+    
+    this.live_string((box) => {
+    
+        box.textContent = "Press P to pause/play background music!" ;
+    });
   }
 
   /*Calculations*/
