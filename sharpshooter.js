@@ -2,14 +2,11 @@ import { defs, tiny } from "./examples/common.js";
 import { Shape_From_File } from "./examples/obj-file-demo.js";
 import {Cube_Outline} from "./cube-outline.js";
 import {CheckCollisionCubeCube, 
-  CheckCollisionCubeSphere, 
-  CheckCollisionRaySphere, 
   CheckCollisionPointRectangle,
   CheckCollisionRayPlane} from "./collision-checkers.js";
   import {Text_Line} from "./examples/text-demo.js";
 const {
   Vector,
-  Vector3,
   vec,
   vec3,
   vec4,
@@ -18,23 +15,19 @@ const {
   Shader,
   Matrix,
   Mat4,
-  //Light,
-  Shape,
   Material,
   Scene,
   Texture,
 } = tiny;
 
 var score = 0;
-//var prize_screen = false;
-//constants
 var GAME = 0;
 var PRIZE = 1;
 var GAME_OVER=2;
 
 
 
-export class FinalProject extends Scene {
+export class Sharpshooter extends Scene {
   constructor() {
     // constructor(): Scenes begin by populating initial values like the Shapes and Materials they'll need.
     super();
