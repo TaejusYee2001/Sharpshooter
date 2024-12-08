@@ -1,4 +1,4 @@
-# CS174A-Sharpshooter
+# Sharpshooter
 
 ## Goal:
 
